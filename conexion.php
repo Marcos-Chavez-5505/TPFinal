@@ -3,7 +3,7 @@
 // Crea una conexion con la base de datos
 function conectarBD() {
     $host = 'localhost';
-    $dbname = 'chavezdb2';
+    $dbname = 'bdviajes';
     $usuario = 'root';
     $contrasena = ''; // cambiar los datos segun tu base, olvide los mios xd
 

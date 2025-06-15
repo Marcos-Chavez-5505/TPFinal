@@ -9,14 +9,14 @@ class ResponsableV {
     }
 
     public function insertar($licencia, $nombre, $apellido) {
-        $sql = "INSERT INTO responsable (rnumerolicencia, rnombre, rapellido)
+        $sql = "INSERT INTO responsable (r_numerolicencia, r_nombre, r_apellido)
                 VALUES (?, ?, ?)";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([$licencia, $nombre, $apellido]);
     }
 
     public function modificar($numeroEmpleado, $licencia, $nombre, $apellido) {
-        $sql = "UPDATE responsable SET rnumerolicencia = ?, rnombre = ?, rapellido = ?
+        $sql = "UPDATE responsable SET r_numerolicencia = ?, r_nombre = ?, r_apellido = ?
                 WHERE rnumeroempleado = ?";
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([$licencia, $nombre, $apellido, $numeroEmpleado]);
