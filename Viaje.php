@@ -11,13 +11,22 @@ class Viaje {
     private $pdo;
 
     public function __construct($id_viaje, $destino, $cant_max_pasajeros, $importe, $id_empresa, $r_numero_empleado){
-        $this->id_viaje = $id_viaje;
-        $this->destino = $destino;
-        $this->cant_max_pasajeros = $cant_max_pasajeros;
-        $this->importe = $importe;
-        $this->id_empresa = $id_empresa;    
-        $this->r_numero_empleado = $r_numero_empleado;
+        $this->id_viaje = 0;
+        $this->destino = "";
+        $this->cant_max_pasajeros = "";
+        $this->importe = "";
+        $this->id_empresa = "";    
+        $this->r_numero_empleado = "";
         $this->pdo = conectarBD();
+    }
+
+    public function cargar($id_viaje, $destino, $cant_max_pasajeros, $importe, $id_empresa, $r_numero_empleado) {
+        $this->setIdViaje($id_viaje);
+        $this->setDestino($destino);
+        $this->setCantMaxPasajeros($cant_max_pasajeros);
+        $this->setImporte($importe);
+        $this->setIdEmpresa($id_empresa);
+        $this->setRNumeroEmpleado($r_numero_empleado);
     }
 
 
@@ -81,16 +90,17 @@ class Viaje {
             $this->getIdEmpresa(),
             $this->getRNumeroEmpleado()
         ]);
-        if($resultado){
+        if ($resultado) {
             $this->setIdViaje($this->pdo->lastInsertId());
         }
         return $resultado;
     }
 
+
     public function modificar(){
         $sql = "UPDATE viaje SET destino = ?, cant_max_pasajeros = ?, importe = ?, id_empresa = ?, r_numero_empleado = ? WHERE id_viaje = ?";
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([
+        $resultado = $stmt->execute([
             $this->getDestino(),
             $this->getCantMaxPasajeros(),
             $this->getImporte(),
@@ -98,36 +108,53 @@ class Viaje {
             $this->getRNumeroEmpleado(),
             $this->getIdViaje()
         ]);
+        return $resultado;
     }
+
 
     public function eliminar(){
         $sql = "DELETE FROM viaje WHERE id_viaje = ?";
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([$this->getIdViaje()]);
+        $resultado = $stmt->execute([$this->getIdViaje()]);
+        return $resultado;
     }
 
-    public static function buscar($id){
-        $pdo = conectarBD();
-        $sql = "SELECT * FROM viaje WHERE id_viaje = ?";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$id]);
-        $fila = $stmt->fetch();
-        if($fila){
-            return new Viaje($fila['id_viaje'], $fila['destino'], $fila['cant_max_pasajeros'], $fila['importe'], $fila['id_empresa'], $fila['r_numero_empleado']);
-        }
-        return null;
-    }
 
-    public static function listar(){
+    public static function listar($condicion = ""){
+        $arregloViaje = null;
         $pdo = conectarBD();
         $sql = "SELECT * FROM viaje";
-        $stmt = $pdo->query($sql);
-        $viajes = [];
-        while($fila = $stmt->fetch()){
-            $viajes[] = new Viaje($fila['id_viaje'], $fila['destino'], $fila['cant_max_pasajeros'], $fila['importe'], $fila['id_empresa'], $fila['r_numero_empleado']);
+
+        if ($condicion != "") {
+            $sql .= " WHERE " . $condicion;
         }
-        return $viajes;
+
+        $sql .= " ORDER BY destino";
+
+        try {
+            $stmt = $pdo->prepare($sql);
+            if ($stmt->execute()) {
+                $arregloViaje = [];
+                while ($fila = $stmt->fetch()) {
+                    $viaje = new Viaje();
+                    $viaje->cargar(
+                        $fila['id_viaje'],
+                        $fila['destino'],
+                        $fila['cant_max_pasajeros'],
+                        $fila['importe'],
+                        $fila['id_empresa'],
+                        $fila['r_numero_empleado']
+                    );
+                    array_push($arregloViaje, $viaje);
+                }
+            }
+        } catch (PDOException $e) {
+            error_log("Error en listar Viaje: " . $e->getMessage());
+        }
+
+        return $arregloViaje;
     }
+
 
     public function __toString(){
         return "Viaje [ID: ".$this->getIdViaje().", Destino: ".$this->getDestino().", Cant Max: ".$this->getCantMaxPasajeros().", Importe: ".$this->getImporte().", Empresa: ".$this->getIdEmpresa().", Empleado: ".$this->getRNumeroEmpleado()."]";
