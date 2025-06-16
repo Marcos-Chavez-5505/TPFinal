@@ -54,6 +54,20 @@ class TestViajes {
         return $resultado;
     }
 
+    public function verEmpresas() {
+        $empresa = new Empresa();
+        $empresas = $empresa->listar();
+
+        if ($empresas === null || count($empresas) === 0) {
+            echo "No hay empresas registradas.\n";
+        } else {
+            foreach ($empresas as $e) {
+                echo "ID: " . $e->getIdEmpresa() . " | Nombre: " . $e->getNombre() . " | Dirección: " . $e->getDireccion() . "\n";
+            }
+        }
+    }
+
+
     // Operaciones sobre Viaje
 
     public function insertarViaje($destino, $cantMaxPasajeros, $importe, $idEmpresa, $numEmpleadoResponsable, $colPasajeros) {
@@ -132,6 +146,20 @@ class TestViajes {
         return $resultado;
     }
 
+    public function verViajes() {
+        $viaje = new Viaje();
+        $viajes = $viaje->listar();
+
+        if ($viajes === null || count($viajes) === 0) {
+            echo "No hay viajes registrados.\n";
+        } else {
+            foreach ($viajes as $v) {
+                echo "ID: " . $v->getIdViaje() . " | Destino: " . $v->getDestino() . " | Cantidad Máxima: " . $v->getCantMaxPasajeros() . "\n";
+            }
+        }
+    }
+
+
     // Operaciones sobre Responsable
 
     public function insertarResponsable($nroLicencia, $nombre, $apellido) {
@@ -146,6 +174,20 @@ class TestViajes {
         }
         return $resultado;
     }
+
+    public function verResponsables() {
+        $responsable = new ResponsableV();
+        $responsables = $responsable->listar();
+
+        if ($responsables === null || count($responsables) === 0) {
+            echo "No hay responsables registrados.\n";
+        } else {
+            foreach ($responsables as $r) {
+                echo "Empleado Nº: " . $r->getNumEmpleado() . " | Licencia: " . $r->getNumLicencia() . " | Nombre: " . $r->getNombre() . " " . $r->getApellido() . "\n";
+            }
+        }
+    }
+
 }
 
 
@@ -173,6 +215,14 @@ $test = new TestViajes();
 // $test->eliminarEmpresa(1);
 
 
+// 7. Listar todas las empresas (sin condiciones)
+// $test->verEmpresas();
+
+// 8. Listar todos los viajes (sin condiciones)
+// $test->verViajes();
+
+// 9. Listar todos los responsables (sin condiciones)
+// $test->verResponsables();
 
 ?>
 
