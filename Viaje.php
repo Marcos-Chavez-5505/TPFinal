@@ -171,7 +171,7 @@ class Viaje {
         if ($condicion != "") {
             $sql .= " WHERE " . $condicion;
         }
-        $sql .= " ORDER BY v_destino";
+        $sql .= " ORDER BY id_viaje";
 
         try {
             $stmt = $this->getPdo()->prepare($sql);
