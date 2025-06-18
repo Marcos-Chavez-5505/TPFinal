@@ -103,7 +103,7 @@ class Empresa {
         if ($condicion != "") {
             $sql .= " WHERE " . $condicion;
         }
-        $sql .= " ORDER BY e_nombre";
+        $sql .= " ORDER BY id_empresa";
 
         try {
             $stmt = $this->getPdo()->query($sql);
@@ -125,5 +125,6 @@ class Empresa {
             ", Nombre: " . $this->getNombre() . 
             ", Dirección: " . $this->getDireccion() . "]";
     }
+
 }
 ?>

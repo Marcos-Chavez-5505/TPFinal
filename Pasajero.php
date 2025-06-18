@@ -123,7 +123,7 @@ class Pasajero {
         if ($condicion != "") {
             $sql .= " WHERE " . $condicion;
         }
-        $sql .= " ORDER BY p_apellido, p_nombre";
+        $sql .= " ORDER BY p_documento";
 
         try {
             $stmt = $this->pdo->prepare($sql);
@@ -150,11 +150,11 @@ class Pasajero {
     }
 
     public function __toString(){
-        return "Pasajero [Documento: " . $this->getP_documento() .
+        return "Documento: " . $this->getP_documento() .
                ", Nombre: " . $this->getP_nombre() .
                ", Apellido: " . $this->getP_apellido() .
                ", Teléfono: " . $this->getP_telefono() .
-               ", Viaje: (" . $this->getViaje() . ")]";
+               ", Viaja a " . $this->getViaje()->getDestino() . "<br>";
     }
 }
 ?>

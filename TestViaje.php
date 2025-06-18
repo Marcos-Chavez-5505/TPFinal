@@ -2,7 +2,7 @@
 include_once 'Empresa.php';
 include_once 'ResponsableV.php';
 include_once 'Viaje.php';
-
+include_once 'Pasajero.php';
 
 
 class TestViajes {
@@ -82,7 +82,7 @@ class TestViajes {
             echo "No hay viajes registrados.<br>";
         } else {
             foreach ($viajes as $v) {
-                $resultado .= "ID: " . $v->getIdViaje() . " | Destino: " . $v->getDestino() . " | Cantidad Máxima: " . $v->getCantMaxPasajeros() . " | Importe: " . $v->getImporte() . " | " . $v->getEmpresa() . " | " . $v->getResponsable() ."<br>";
+                $resultado .= "ID: " . $v->getIdViaje() . " | Destino: " . $v->getDestino() . " | Cantidad Máxima: " . $v->getCantMaxPasajeros() . " | Importe: " . $v->getImporte() . " | Empresa N°" . $v->getEmpresa()->getNombre() . " | Responsable: " . $v->getResponsable()->getNombre() . " " . $v->getResponsable()->getApellido()  ."<br>" . "Coleccion Pasajeros: <br>" . $v->colPasajerosStr() . "<br>" . "<br>";
             }
         }
 
@@ -199,39 +199,102 @@ class TestViajes {
         return $resultado;
     }
 
- 
+
+
+    // Operaciones sobre Pasajero
+
+    public function verPasajeros() {
+        $pasajero = new Pasajero();
+        $pasajeros = $pasajero->listar();
+        $resultado = "";
+
+        if ($pasajeros === null || count($pasajeros) === 0) {
+            $resultado = "No hay pasajeros registrados.<br>";
+        } else {
+            foreach ($pasajeros as $p) {
+                $resultado .= "Documento: " . $p->getP_documento() . " | Nombre: " . $p->getP_nombre() . " " . $p->getP_apellido() . " | Teléfono: " . $p->getP_telefono() . " | ID Viaja a " . $p->getViaje()->getDestino() . "<br>";
+            }
+        }
+        return $resultado;
+    }
+
+    public function insertarPasajero($documento, $nombre, $apellido, $telefono, $idViaje) {
+        $resultado = null;
+        $viaje = new Viaje();
+
+        if ($viaje->buscar($idViaje)) {
+            $pasajero = new Pasajero();
+            $pasajero->cargar($documento, $nombre, $apellido, $telefono, $viaje);
+            if ($pasajero->insertar()) {
+                echo "Pasajero insertado con éxito. Documento: " . $documento . "<br>";
+                $resultado = $pasajero;
+            } else {
+                echo "Error al insertar pasajero.<br>";
+            }
+        } else {
+            echo "No se encontró el viaje con ID: $idViaje<br>";
+        }
+
+        return $resultado;
+    }    
 }
 
     
 
 
-
+    
 $test = new TestViajes();
+
 
 // 1. Inserta una empresa
 
-// $test->insertarEmpresa("Empresa XYZ", "Av. Siempre Viva 123");
-// echo "Listado Empresas:<br>" . $test->verEmpresas()
+// $test->insertarEmpresa("Aerolinea Papu", "Av. Argentina 123");
 
-// 2. Inserta un Responsable para crear una venta
+// 2. Modificar una Empresa
+//  $test->modificarEmpresa(3, "Areolinia Messi", "Av. Pepe");
 
-// $test->insertarResponsable(123456, "Lucas", "Martinez");
+// 3. Eliminar empresa 
+// $test->eliminarEmpresa(5);
+
+
+//Listado Empresa
+// echo "Listado Empresas:<br>" . $test->verEmpresas();
+
+
+
+// 4. Inserta un Responsable para crear una venta
+
+// $test->insertarResponsable(123456, "Piti", "Martinez");
+
+// Listar Respondables
 // echo "Listado Responsables:<br>" . $test->verResponsables()
 
-// 3. Insertar un viaje (ejecutar solo si ya existe empresa y responsable)
-// $test->insertarViaje("Mar del Plata", 50, 2000, 2, 1, []);
-// echo "Listado Viajes: <br>" . $test->verViajes(); 
+
+
+
+// 5. Insertar un viaje (ejecutar solo si ya existe empresa y responsable)
+// $viaje = $test->insertarViaje("Mar del Plata", 50, 2000, 6, 8, []);
+
+
+// 6. Insertar Pasajero
+// $pasajero = $test->insertarPasajero(482320294, "eetdsde", "sech", 2995765590, 9);
+
+
+// Listado Pasajeros
+// echo "Listado Pasajeros: <br>" . $test->verPasajeros(); 
 
 // 4. Modificar un viaje
-// $test->modificarViaje(4, "Villa 61", 40, 1800, 2, 1);
-// echo "Listado Viajes: <br>" . $test->verViajes();
+// $test->modificarViaje(7, "Villa del papu", 40, 1800, 7, 1);
+
 
 // 5. Eliminar viaje
-// $test->eliminarViaje(2);
-// echo "Listado Viajes: <br>" . $test->verViajes();
+// $test->eliminarViaje(10);
 
-// 6. Eliminar empresa (tené cuidado con integridad referencial)
-// $test->eliminarEmpresa(1);
+
+// Listado Viajes
+echo "Listado Viajes: <br>" . $test->verViajes(); 
+
+
 
 
 ?>

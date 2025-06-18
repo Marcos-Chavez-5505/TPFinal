@@ -160,11 +160,6 @@ class Viaje {
         return $resultado;
     }
 
-    /** Lista viajes, opcionalmente con condición.
-     * 
-     * @param mixed $condicion
-     * @return array|null
-     */
     public function listar($condicion = "") {
         $arregloViaje = null;
         $sql = "SELECT * FROM viaje";
@@ -191,6 +186,12 @@ class Viaje {
                         $empresa,
                         $responsable
                     );
+
+                    //cargar colección de pasajeros
+                    $pasajero = new Pasajero();
+                    $coleccionPasajeros = $pasajero->listar("id_viaje = " . $fila['id_viaje']);
+                    $viaje->setColPasajeros($coleccionPasajeros);
+
                     array_push($arregloViaje, $viaje);
                 }
             }
@@ -201,13 +202,37 @@ class Viaje {
         return $arregloViaje;
     }
 
+
     public function __toString() {
         return "Viaje [ID: " . $this->getIdViaje() .
             ", Destino: " . $this->getDestino() .
             ", Cant Max: " . $this->getCantMaxPasajeros() .
             ", Importe: " . $this->getImporte() .
             ", Empresa: " . $this->getEmpresa()->getIdEmpresa() .
-            ", Empleado: " . $this->getResponsable()->getNumEmpleado() . "]";
+            ", Empleado: " . $this->getResponsable()->getIdResponsable();
     }
+
+    /** Convertir array colección en string
+    * @param array $unaColeccion
+    * @return string
+    */
+    function ColPasajerosStr(){
+
+        $unaColeccion = $this->getColPasajeros();
+        //Si la colección está vacía
+        $coleccionStr = "No hay elementos";
+        //Si hay elementos dentro de la colección
+        if ($unaColeccion != null){
+            if (count($unaColeccion) != 0){
+                $coleccionStr = "";
+                foreach ($unaColeccion as $elemento){
+                    $coleccionStr = $coleccionStr."\n".$elemento;
+                }
+                $coleccionStr = $coleccionStr."\n";
+            }
+        }
+        return $coleccionStr;
+    }
+
 }
 ?>
