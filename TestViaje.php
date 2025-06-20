@@ -4,7 +4,6 @@ include_once 'ResponsableV.php';
 include_once 'Viaje.php';
 include_once 'Pasajero.php';
 
-
 class TestViajes {
 
     // Operaciones sobre Empresa
@@ -43,6 +42,7 @@ class TestViajes {
         $resultado = false;
         if ($empresa->buscar($idEmpresa)) {
             $empresa->cargar($nombre, $direccion);
+            $empresa->setIdEmpresa($idEmpresa);
             if ($empresa->modificar()) {
                 echo "Empresa modificada con éxito.<br>";
                 $resultado = true;
@@ -79,43 +79,50 @@ class TestViajes {
         $resultado = "";
 
         if ($viajes === null || count($viajes) === 0) {
-            echo "No hay viajes registrados.<br>";
+            $resultado = "No hay viajes registrados.<br>";
         } else {
             foreach ($viajes as $v) {
-                $resultado .= "ID: " . $v->getIdViaje() . " | Destino: " . $v->getDestino() . " | Cantidad Máxima: " . $v->getCantMaxPasajeros() . " | Importe: " . $v->getImporte() . " | Empresa N°" . $v->getEmpresa()->getNombre() . " | Responsable: " . $v->getResponsable()->getNombre() . " " . $v->getResponsable()->getApellido()  ."<br>" . "Coleccion Pasajeros: <br>" . $v->colPasajerosStr() . "<br>" . "<br>";
+                $resultado .= "ID: " . $v->getIdViaje() . " | Destino: " . $v->getDestino() .
+                " | Cantidad Máxima: " . $v->getCantMaxPasajeros() .
+                " | Importe: " . $v->getImporte() .
+                " | Empresa: " . $v->getEmpresa()->getNombre() .
+                " | Responsable: " . $v->getResponsable()->getNombre() . " " . $v->getResponsable()->getApellido() . "<br>" .
+                "Colección Pasajeros: <br>" . nl2br($v->ColPasajerosStr()) . "<br><br>";
             }
         }
 
         return $resultado;
     }
 
-    public function insertarViaje($destino, $cantMaxPasajeros, $importe, $idEmpresa, $numEmpleadoResponsable, $colPasajeros) {
+    public function insertarViaje($destino, $cantMaxPasajeros, $importe, $idEmpresa, $numEmpleadoResponsable, $colPasajeros = []) {
         $resultado = false;
         $encontrado = true;
+        $mensajeErrorBuscar = "";
 
         $empresa = new Empresa();
         $responsable = new ResponsableV();
 
         if (!$empresa->buscar($idEmpresa)) {
-            $mensajeErrorBuscar = "No se encontró la empresa con ID $idEmpresa<br>";
+            $mensajeErrorBuscar .= "No se encontró la empresa con ID $idEmpresa<br>";
             $encontrado = false;
         }
 
         if (!$responsable->buscar($numEmpleadoResponsable)) {
-            $mensajeErrorBuscar = "No se encontró el responsable con número $numEmpleadoResponsable<br>";
+            $mensajeErrorBuscar .= "No se encontró el responsable con número $numEmpleadoResponsable<br>";
             $encontrado = false;
         }
 
         $viaje = new Viaje();
         $viaje->cargar(null, $destino, $cantMaxPasajeros, $importe, $empresa, $responsable, $colPasajeros);
 
-        if ($viaje->insertar() && $encontrado) {
+        if ($encontrado && $viaje->insertar()) {
             echo "Viaje insertado con éxito. ID: " . $viaje->getIdViaje() . "<br>";
             $resultado = $viaje;
         } else {
             echo $mensajeErrorBuscar;
             echo $viaje->getMensajeError() . "<br>";
         }
+
         return $resultado;
     }
 
@@ -124,29 +131,23 @@ class TestViajes {
         $viaje = new Viaje();
         if (!$viaje->buscar($idViaje)) {
             echo "No se encontró el viaje con ID $idViaje<br>";
-            return $resultado;
-        }
-
-        $empresa = new Empresa();
-        $responsable = new ResponsableV();
-
-        if (!$empresa->buscar($idEmpresa)) {
-            echo "No se encontró la empresa con ID $idEmpresa<br>";
-            return $resultado;
-        }
-
-        if (!$responsable->buscar($numEmpleadoResponsable)) {
-            echo "No se encontró el responsable con número $numEmpleadoResponsable<br>";
-            return $resultado;
-        }
-
-        $viaje->cargar($idViaje, $destino, $cantMaxPasajeros, $importe, $empresa, $responsable);
-
-        if ($viaje->modificar()) {
-            echo "Viaje modificado con éxito.<br>";
-            $resultado = true;
         } else {
-            echo $viaje->getMensajeError() . "<br>";
+            $empresa = new Empresa();
+            $responsable = new ResponsableV();
+
+            if (!$empresa->buscar($idEmpresa)) {
+                echo "No se encontró la empresa con ID $idEmpresa<br>";
+            } elseif (!$responsable->buscar($numEmpleadoResponsable)) {
+                echo "No se encontró el responsable con número $numEmpleadoResponsable<br>";
+            } else {
+                $viaje->cargar($idViaje, $destino, $cantMaxPasajeros, $importe, $empresa, $responsable);
+                if ($viaje->modificar()) {
+                    echo "Viaje modificado con éxito.<br>";
+                    $resultado = true;
+                } else {
+                    echo $viaje->getMensajeError() . "<br>";
+                }
+            }
         }
         return $resultado;
     }
@@ -166,7 +167,6 @@ class TestViajes {
         }
         return $resultado;
     }
-
 
     // Operaciones sobre Responsable
 
@@ -199,8 +199,6 @@ class TestViajes {
         return $resultado;
     }
 
-
-
     // Operaciones sobre Pasajero
 
     public function verPasajeros() {
@@ -212,7 +210,7 @@ class TestViajes {
             $resultado = "No hay pasajeros registrados.<br>";
         } else {
             foreach ($pasajeros as $p) {
-                $resultado .= "Documento: " . $p->getP_documento() . " | Nombre: " . $p->getP_nombre() . " " . $p->getP_apellido() . " | Teléfono: " . $p->getP_telefono() . " | ID Viaja a " . $p->getViaje()->getDestino() . "<br>";
+                $resultado .= "Documento: " . $p->getDocumento() . " | Nombre: " . $p->getNombre() . " " . $p->getApellido() . " | Teléfono: " . $p->getTelefono() . "<br>";
             }
         }
         return $resultado;
@@ -224,79 +222,31 @@ class TestViajes {
 
         if ($viaje->buscar($idViaje)) {
             $pasajero = new Pasajero();
-            $pasajero->cargar($documento, $nombre, $apellido, $telefono, $viaje);
+            $pasajero->cargar($documento, $nombre, $apellido, $telefono);
             if ($pasajero->insertar()) {
+                $pasajero->agregarViaje($idViaje);
                 echo "Pasajero insertado con éxito. Documento: " . $documento . "<br>";
                 $resultado = $pasajero;
             } else {
-                echo "Error al insertar pasajero.<br>";
+                echo $pasajero->getMensajeError() . "<br>";
             }
         } else {
             echo "No se encontró el viaje con ID: $idViaje<br>";
         }
 
         return $resultado;
-    }    
+    }
 }
 
-    
-
-
-    
+// Ejemplo de uso
 $test = new TestViajes();
 
-
-// 1. Inserta una empresa
-
-// $test->insertarEmpresa("Aerolinea Papu", "Av. Argentina 123");
-
-// 2. Modificar una Empresa
-//  $test->modificarEmpresa(3, "Areolinia Messi", "Av. Pepe");
-
-// 3. Eliminar empresa 
-// $test->eliminarEmpresa(5);
-
-
-//Listado Empresa
-// echo "Listado Empresas:<br>" . $test->verEmpresas();
-
-
-
-// 4. Inserta un Responsable para crear una venta
-
-// $test->insertarResponsable(123456, "Piti", "Martinez");
-
-// Listar Respondables
-// echo "Listado Responsables:<br>" . $test->verResponsables()
-
-
-
-
-// 5. Insertar un viaje (ejecutar solo si ya existe empresa y responsable)
-// $viaje = $test->insertarViaje("Mar del Plata", 50, 2000, 6, 8, []);
-
-
-// 6. Insertar Pasajero
-// $pasajero = $test->insertarPasajero(482320294, "eetdsde", "sech", 2995765590, 9);
-
-
-// Listado Pasajeros
-// echo "Listado Pasajeros: <br>" . $test->verPasajeros(); 
-
-// 4. Modificar un viaje
-// $test->modificarViaje(7, "Villa del papu", 40, 1800, 7, 1);
-
-
-// 5. Eliminar viaje
-// $test->eliminarViaje(10);
-
-
-// Listado Viajes
-echo "Listado Viajes: <br>" . $test->verViajes(); 
-
-
-
-
+// $test->insertarEmpresa("Aerolineas Argentinas", "Av. Argentina 123");
+// $test->insertarResponsable(123456, "Lucas", "Martinez");
+// $test->insertarViaje("Mar del Pepe", 50, 2000, 1, 1);
+// $test->insertarPasajero("48294", "Marza", "Chavi", "2995565790", 1);
+// $test->eliminarViaje(1);
+// echo $test->verViajes();
+// echo $test->verPasajeros();
 ?>
-
 

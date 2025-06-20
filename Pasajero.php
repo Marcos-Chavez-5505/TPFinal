@@ -1,160 +1,181 @@
 <?php
 require_once 'conexion.php';
 require_once 'Viaje.php';
+require_once 'Persona.php';
 
-class Pasajero {
+class Pasajero extends Persona {
     private $p_documento;
-    private $p_nombre;
-    private $p_apellido;
-    private $p_telefono;                                
-    private $objViaje; // Referencia a objeto Viaje
+    private $p_telefono;
     private $pdo;
+    private $mensajeError;
 
-    public function __construct(){
+    public function __construct() {
+        parent::__construct();
         $this->p_documento = "";
-        $this->p_nombre = "";
-        $this->p_apellido = "";
         $this->p_telefono = "";
-        $this->objViaje = null;
         $this->pdo = conectarBD();
+        $this->mensajeError = "";
     }
 
     // Getters
-    public function getP_documento(){ return $this->p_documento; }
-    public function getP_nombre(){ return $this->p_nombre; }
-    public function getP_apellido(){ return $this->p_apellido; }
-    public function getP_telefono(){ return $this->p_telefono; }
-    public function getViaje(){ return $this->objViaje; }
+    public function getDocumento() { return $this->p_documento; }
+    public function getTelefono() { return $this->p_telefono; }
+    public function getMensajeError() { return $this->mensajeError; }
+    public function getPdo() { return $this->pdo; }
 
     // Setters
-    public function setP_documento($p_documento){ $this->p_documento = $p_documento; }
-    public function setP_nombre($p_nombre){ $this->p_nombre = $p_nombre; }
-    public function setP_apellido($p_apellido){ $this->p_apellido = $p_apellido; }
-    public function setP_telefono($p_telefono){ $this->p_telefono = $p_telefono; }
-    public function setViaje($objViaje){ $this->objViaje = $objViaje; }
+    public function setDocumento($doc) { $this->p_documento = $doc; }
+    public function setTelefono($tel) { $this->p_telefono = $tel; }
+    public function setMensajeError($msg) { $this->mensajeError = $msg; }
 
-    /** Carga todos los atributos */
-    public function cargar($p_documento, $p_nombre, $p_apellido, $p_telefono, $objViaje){
-        $this->setP_documento($p_documento);
-        $this->setP_nombre($p_nombre);
-        $this->setP_apellido($p_apellido);
-        $this->setP_telefono($p_telefono);
-        $this->setViaje($objViaje);
+    public function cargar($documento, $nombre, $apellido, $telefono) {
+        $this->setDocumento($documento);
+        $this->setNombre($nombre);
+        $this->setApellido($apellido);
+        $this->setTelefono($telefono);
+        $this->setActivo(true);
     }
 
-    /** Inserta el pasajero en la BD */
-    public function insertar(){
-        $sql = "INSERT INTO pasajero (p_documento, p_nombre, p_apellido, p_telefono, id_viaje) VALUES (?, ?, ?, ?, ?)";
+    public function insertar() {
+        $sql = "INSERT INTO pasajero (p_documento, p_nombre, p_apellido, p_telefono, activo) VALUES (?, ?, ?, ?, ?)";
         try {
             $stmt = $this->pdo->prepare($sql);
             return $stmt->execute([
-                $this->getP_documento(),
-                $this->getP_nombre(),
-                $this->getP_apellido(),
-                $this->getP_telefono(),
-                $this->getViaje()->getIdViaje()
+                $this->getDocumento(),
+                $this->getNombre(),
+                $this->getApellido(),
+                $this->getTelefono(),
+                $this->getActivo()
             ]);
         } catch (PDOException $e) {
-            error_log("Error al insertar Pasajero: " . $e->getMessage());
+            $this->setMensajeError("Error al insertar Pasajero: " . $e->getMessage());
             return false;
         }
     }
 
-    /** Modifica el pasajero en la BD */
-    public function modificar(){
-        $sql = "UPDATE pasajero SET p_nombre = ?, p_apellido = ?, p_telefono = ?, id_viaje = ? WHERE p_documento = ?";
+    public function modificar() {
+        $sql = "UPDATE pasajero SET p_nombre = ?, p_apellido = ?, p_telefono = ? WHERE p_documento = ? AND activo = TRUE";
         try {
             $stmt = $this->pdo->prepare($sql);
             return $stmt->execute([
-                $this->getP_nombre(),
-                $this->getP_apellido(),
-                $this->getP_telefono(),
-                $this->getViaje()->getIdViaje(),
-                $this->getP_documento()
+                $this->getNombre(),
+                $this->getApellido(),
+                $this->getTelefono(),
+                $this->getDocumento()
             ]);
         } catch (PDOException $e) {
-            error_log("Error al modificar Pasajero: " . $e->getMessage());
+            $this->setMensajeError("Error al modificar Pasajero: " . $e->getMessage());
             return false;
         }
     }
 
-    /** Elimina el pasajero en la BD */
-    public function eliminar(){
-        $sql = "DELETE FROM pasajero WHERE p_documento = ?";
+    public function eliminar() {
+        $sql = "UPDATE pasajero SET activo = FALSE WHERE p_documento = ? AND activo = TRUE";
         try {
             $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([$this->getP_documento()]);
+            if ($stmt->execute([$this->getDocumento()]) && $stmt->rowCount() > 0) {
+                $this->setActivo(false);
+                return true;
+            }
+            $this->setMensajeError("El pasajero no existe o ya está eliminado.");
         } catch (PDOException $e) {
-            error_log("Error al eliminar Pasajero: " . $e->getMessage());
-            return false;
+            $this->setMensajeError("Error al eliminar Pasajero: " . $e->getMessage());
         }
+        return false;
     }
 
-    /** Busca un pasajero por documento y carga el objeto */
-    public function buscar($p_documento){
-        $encontro = false;
-        $sql = "SELECT * FROM pasajero WHERE p_documento = ?";
+    public function buscar($documento) {
+        $sql = "SELECT * FROM pasajero WHERE p_documento = ? AND activo = TRUE";
         try {
             $stmt = $this->pdo->prepare($sql);
-            if ($stmt->execute([$p_documento])) {
-                if ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    $objViaje = new Viaje();
-                    $objViaje->buscar($fila['id_viaje']);
-                    $this->cargar(
-                        $fila['p_documento'],
-                        $fila['p_nombre'],
-                        $fila['p_apellido'],
-                        $fila['p_telefono'],
-                        $objViaje
-                    );
-                    $encontro = true;
-                }
+            if ($stmt->execute([$documento]) && $fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $this->cargar($fila['p_documento'], $fila['p_nombre'], $fila['p_apellido'], $fila['p_telefono']);
+                $this->setActivo($fila['activo']);
+                return true;
             }
         } catch (PDOException $e) {
-            error_log("Error al buscar Pasajero: " . $e->getMessage());
+            $this->setMensajeError("Error al buscar Pasajero: " . $e->getMessage());
         }
-        return $encontro;
+        return false;
     }
 
-    /** Lista todos los pasajeros, opcionalmente con condición */
-    public function listar($condicion = ""){
-        $arregloPasajeros = null;
-        $sql = "SELECT * FROM pasajero";
-        if ($condicion != "") {
-            $sql .= " WHERE " . $condicion;
+    public function listar($condicion = "") {
+        $sql = "SELECT * FROM pasajero WHERE activo = TRUE";
+        if ($condicion !== "") {
+            $sql .= " AND $condicion";
         }
         $sql .= " ORDER BY p_documento";
 
+        $coleccion = [];
+        try {
+            $stmt = $this->pdo->query($sql);
+            while ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $obj = new Pasajero();
+                $obj->cargar($fila['p_documento'], $fila['p_nombre'], $fila['p_apellido'], $fila['p_telefono']);
+                $obj->setActivo($fila['activo']);
+                $coleccion[] = $obj;
+            }
+        } catch (PDOException $e) {
+            $this->setMensajeError("Error al listar Pasajeros: " . $e->getMessage());
+        }
+
+        return $coleccion;
+    }
+
+    public function agregarViaje($idViaje) {
+        $sql = "INSERT INTO participa (p_documento, id_viaje, activo) VALUES (?, ?, TRUE)";
         try {
             $stmt = $this->pdo->prepare($sql);
-            if ($stmt->execute()) {
-                $arregloPasajeros = [];
+            return $stmt->execute([$this->getDocumento(), $idViaje]);
+        } catch (PDOException $e) {
+            $this->setMensajeError("Error al agregar viaje al pasajero: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function quitarViaje($idViaje) {
+        $sql = "UPDATE participa SET activo = FALSE WHERE p_documento = ? AND id_viaje = ? AND activo = TRUE";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute([$this->getDocumento(), $idViaje]);
+        } catch (PDOException $e) {
+            $this->setMensajeError("Error al quitar viaje del pasajero: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function listarViajes() {
+        $sql = "SELECT v.* FROM viaje v 
+                INNER JOIN participa p ON v.id_viaje = p.id_viaje 
+                WHERE p.p_documento = ? AND p.activo = TRUE AND v.activo = TRUE";
+        $coleccion = [];
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            if ($stmt->execute([$this->getDocumento()])) {
                 while ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    $objViaje = new Viaje();
-                    $objViaje->buscar($fila['id_viaje']);
-                    $pasajero = new Pasajero();
-                    $pasajero->cargar(
-                        $fila['p_documento'],
-                        $fila['p_nombre'],
-                        $fila['p_apellido'],
-                        $fila['p_telefono'],
-                        $objViaje
-                    );
-                    $arregloPasajeros[] = $pasajero;
+                    $viaje = new Viaje();
+                    $viaje->buscar($fila['id_viaje']); // carga completa
+                    $coleccion[] = $viaje;
                 }
             }
         } catch (PDOException $e) {
-            error_log("Error en listar Pasajeros: " . $e->getMessage());
+            $this->setMensajeError("Error al listar viajes del pasajero: " . $e->getMessage());
         }
-        return $arregloPasajeros;
+        return $coleccion;
     }
 
-    public function __toString(){
-        return "Documento: " . $this->getP_documento() .
-               ", Nombre: " . $this->getP_nombre() .
-               ", Apellido: " . $this->getP_apellido() .
-               ", Teléfono: " . $this->getP_telefono() .
-               ", Viaja a " . $this->getViaje()->getDestino() . "<br>";
+    public function __toString() {
+        $estado = $this->getActivo() ? "ACTIVO" : "ELIMINADO";
+        $viajes = $this->listarViajes();
+        $listaViajes = count($viajes) > 0
+            ? implode(", ", array_map(fn($v) => $v->getDestino(), $viajes))
+            : "No tiene viajes asignados";
+        return "Documento: " . $this->getDocumento() .
+               ", Nombre: " . $this->getNombre() .
+               ", Apellido: " . $this->getApellido() .
+               ", Teléfono: " . $this->getTelefono() .
+               ", Estado: " . $estado .
+               ", Viajes: " . $listaViajes . "<br>";
     }
 }
 ?>
