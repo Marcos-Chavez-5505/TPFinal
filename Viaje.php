@@ -10,98 +10,97 @@ class Viaje {
     private $v_destino;
     private $v_cantmaxpasajeros;
     private $v_importe;
-    private $objEmpresa;    
+    private $objEmpresa;
     private $objResponsableV;
     private $colPasajeros;
-    private $activo; // nuevo atributo para borrado lógico
+    private $activo;
     private $pdo;
     private $mensajeError;
 
-    public function __construct(){
+    public function __construct() {
         $this->id_viaje = null;
         $this->v_destino = "";
         $this->v_cantmaxpasajeros = 0;
         $this->v_importe = 0.0;
-        $this->objEmpresa = null;    
+        $this->objEmpresa = null;
         $this->objResponsableV = null;
         $this->colPasajeros = [];
-        $this->activo = true; // por defecto está activo
+        $this->activo = true;
         $this->pdo = conectarBD();
         $this->mensajeError = "";
     }
 
-    public function cargar($id_viaje, $v_destino, $v_cantmaxpasajeros, $v_importe, $objEmpresa, $objResponsableV, $colPasajeros = [], $activo = true){
-        $this->setIdViaje($id_viaje);
-        $this->setDestino($v_destino);
-        $this->setCantMaxPasajeros($v_cantmaxpasajeros);
-        $this->setImporte($v_importe);
-        $this->setEmpresa($objEmpresa);
-        $this->setResponsable($objResponsableV);
-        $this->setColPasajeros($colPasajeros);
-        $this->setActivo($activo);
+    public function cargar($v_destino, $v_cantmaxpasajeros, $v_importe, $objEmpresa, $objResponsableV, $activo = true) {
+        $this->v_destino = $v_destino;
+        $this->v_cantmaxpasajeros = $v_cantmaxpasajeros;
+        $this->v_importe = $v_importe;
+        $this->objEmpresa = $objEmpresa;
+        $this->objResponsableV = $objResponsableV;
+        $this->activo = $activo;
     }
 
     // Getters
-    public function getIdViaje(){ return $this->id_viaje; }
-    public function getDestino(){ return $this->v_destino; }
-    public function getCantMaxPasajeros(){ return $this->v_cantmaxpasajeros; }
-    public function getImporte(){ return $this->v_importe; }
-    public function getEmpresa(){ return $this->objEmpresa; }
-    public function getResponsable(){ return $this->objResponsableV; }
-    public function getColPasajeros(){ return $this->colPasajeros; }
-    public function getActivo(){ return $this->activo; }
-    public function getPdo(){ return $this->pdo; }
-    public function getMensajeError(){ return $this->mensajeError; }
+    public function getIdViaje() { return $this->id_viaje; }
+    public function getDestino() { return $this->v_destino; }
+    public function getCantMaxPasajeros() { return $this->v_cantmaxpasajeros; }
+    public function getImporte() { return $this->v_importe; }
+    public function getEmpresa() { return $this->objEmpresa; }
+    public function getResponsable() { return $this->objResponsableV; }
+    public function getColPasajeros() { return $this->colPasajeros; }
+    public function getActivo() { return $this->activo; }
+    public function getMensajeError() { return $this->mensajeError; }
 
     // Setters
-    public function setIdViaje($id_viaje){ $this->id_viaje = $id_viaje; }
-    public function setDestino($v_destino){ $this->v_destino = $v_destino; }
-    public function setCantMaxPasajeros($v_cantmaxpasajeros){ $this->v_cantmaxpasajeros = $v_cantmaxpasajeros; }
-    public function setImporte($v_importe){ $this->v_importe = $v_importe; }
-    public function setEmpresa($objEmpresa){ $this->objEmpresa = $objEmpresa; }
-    public function setResponsable($objResponsableV){ $this->objResponsableV = $objResponsableV; }
-    public function setColPasajeros($colPasajeros){ $this->colPasajeros = $colPasajeros; }
-    public function setActivo($activo){ $this->activo = $activo; }
-    public function setMensajeError($mensajeError){ $this->mensajeError = $mensajeError; }
+    public function setIdViaje($id_viaje) { $this->id_viaje = $id_viaje; }
+    public function setDestino($v_destino) { $this->v_destino = $v_destino; }
+    public function setCantMaxPasajeros($v_cantmaxpasajeros) { $this->v_cantmaxpasajeros = $v_cantmaxpasajeros; }
+    public function setImporte($v_importe) { $this->v_importe = $v_importe; }
+    public function setEmpresa($objEmpresa) { $this->objEmpresa = $objEmpresa; }
+    public function setResponsable($objResponsableV) { $this->objResponsableV = $objResponsableV; }
+    public function setColPasajeros($colPasajeros) { $this->colPasajeros = $colPasajeros; }
+    public function setActivo($activo) { $this->activo = $activo; }
+    public function setMensajeError($mensajeError) { $this->mensajeError = $mensajeError; }
 
     public function agregarPasajero(Pasajero $pasajero) {
-    $existe = false;
-
-    foreach ($this->colPasajeros as $p) {
-        $existe = $existe || ($p->getDocumento() === $pasajero->getDocumento());
-    }
-
-    if (!$existe) {
-        $this->colPasajeros[] = $pasajero;
-
-        $participa = new Participa();
-        $participa->setIdViaje($this->getIdViaje());
-        $participa->setPDocumento($pasajero->getDocumento());
-        $participa->insertar();
-    }
-}
-
-
-    // Quitar pasajero de colección y desactivar relación en participa
-    public function quitarPasajero($documentoPasajero) {
-        foreach ($this->colPasajeros as $key => $p) {
-            if ($p->getDocumento() === $documentoPasajero) {
-                unset($this->colPasajeros[$key]);
-                // Reindexar
-                $this->colPasajeros = array_values($this->colPasajeros);
-
-                // Borrado lógico en participa
-                $participa = new Participa();
-                $participa->setIdViaje($this->getIdViaje());
-                $participa->setPDocumento($documentoPasajero);
-                $participa->eliminar();
-                return true;
+        $resultado = false;
+        $existe = false;
+        $i = 0;
+        $cantPasajeros = count($this->colPasajeros);
+        
+        while ($i < $cantPasajeros && !$existe) {
+            if ($this->colPasajeros[$i]->getDocumento() === $pasajero->getDocumento()) {
+                $existe = true;
             }
+            $i++;
         }
-        return false;
+        
+        if (!$existe) {
+            $this->colPasajeros[] = $pasajero;
+            $resultado = true;
+        }
+        
+        return $resultado;
     }
 
-    // Cargar pasajeros desde BD via tabla participa
+    public function quitarPasajero($documentoPasajero) {
+        $resultado = false;
+        $nuevaColeccion = [];
+        $i = 0;
+        $cantPasajeros = count($this->colPasajeros);
+        
+        while ($i < $cantPasajeros) {
+            if ($this->colPasajeros[$i]->getDocumento() !== $documentoPasajero) {
+                $nuevaColeccion[] = $this->colPasajeros[$i];
+            } else {
+                $resultado = true;
+            }
+            $i++;
+        }
+        
+        $this->colPasajeros = $nuevaColeccion;
+        return $resultado;
+    }
+
     private function cargarPasajeros($idViaje) {
         $participa = new Participa();
         return $participa->listarPasajerosPorViaje($idViaje);
@@ -109,201 +108,231 @@ class Viaje {
 
     public function insertar() {
         $resultado = false;
-        $sql = "INSERT INTO viaje (v_destino, v_cantmaxpasajeros, v_importe, id_empresa, r_numeroempleado, activo) VALUES (?, ?, ?, ?, ?, ?)";
+        
         try {
-            $stmt = $this->getPdo()->prepare($sql);
-            if ($stmt->execute([
-                $this->getDestino(),
-                $this->getCantMaxPasajeros(),
-                $this->getImporte(),
-                $this->getEmpresa()->getIdEmpresa(),
-                $this->getResponsable()->getIdResponsable(),
-                $this->getActivo()
-            ])) {
-                $this->setIdViaje($this->getPdo()->lastInsertId());
-
-                // Insertar relaciones pasajero-viaje
-                foreach ($this->colPasajeros as $pasajero) {
+            $this->pdo->beginTransaction();
+            
+            $sql = "INSERT INTO viaje (v_destino, v_cantmaxpasajeros, v_importe, id_empresa, documento_responsable) 
+                    VALUES (:destino, :cantmax, :importe, :idempresa, :docresponsable)";
+            
+            $stmt = $this->pdo->prepare($sql);
+            $params = [
+                ':destino' => $this->v_destino,
+                ':cantmax' => $this->v_cantmaxpasajeros,
+                ':importe' => $this->v_importe,
+                ':idempresa' => $this->objEmpresa->getIdEmpresa(),
+                ':docresponsable' => $this->objResponsableV->getDocumento()
+            ];
+            
+            if ($stmt->execute($params)) {
+                $this->id_viaje = $this->pdo->lastInsertId();
+                $todosInsertados = true;
+                $i = 0;
+                $cantPasajeros = count($this->colPasajeros);
+                
+                while ($i < $cantPasajeros && $todosInsertados) {
                     $participa = new Participa();
-                    $participa->setIdViaje($this->getIdViaje());
-                    $participa->setPDocumento($pasajero->getDocumento());
-                    $participa->insertar();
+                    $participa->setIdViaje($this->id_viaje);
+                    $participa->setPDocumento($this->colPasajeros[$i]->getDocumento());
+                    
+                    if (!$participa->insertar()) {
+                        $todosInsertados = false;
+                        $this->mensajeError = $participa->getMensajeError();
+                    }
+                    $i++;
                 }
-                $resultado = true;
+                
+                if ($todosInsertados) {
+                    $this->pdo->commit();
+                    $resultado = true;
+                } else {
+                    $this->pdo->rollBack();
+                }
             }
-        } catch (PDOException $e) {
-            $this->setMensajeError("Error al insertar Viaje: " . $e->getMessage());
+            
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            $this->mensajeError = $e->getMessage();
         }
+        
         return $resultado;
     }
 
     public function modificar() {
         $resultado = false;
-        $sql = "UPDATE viaje SET v_destino = ?, v_cantmaxpasajeros = ?, v_importe = ?, id_empresa = ?, r_numeroempleado = ? WHERE id_viaje = ? AND activo = TRUE";
+        
         try {
-            $stmt = $this->getPdo()->prepare($sql);
-            $resultado = $stmt->execute([
-                $this->getDestino(),
-                $this->getCantMaxPasajeros(),
-                $this->getImporte(),
-                $this->getEmpresa()->getIdEmpresa(),
-                $this->getResponsable()->getIdResponsable(),
-                $this->getIdViaje()
-            ]);
-            if ($resultado) {
-                // Opcional: actualizar pasajeros
-                // Aquí deberías manejar la actualización de relaciones participa,
-                // si fuera necesario (agregar/quitar pasajeros)
-                // Por simplicidad no lo implemento aquí, pero puede hacerse.
-            }
+            $sql = "UPDATE viaje SET 
+                    v_destino = :destino, 
+                    v_cantmaxpasajeros = :cantmax, 
+                    v_importe = :importe, 
+                    id_empresa = :idempresa, 
+                    documento_responsable = :docresponsable 
+                    WHERE id_viaje = :id AND activo = TRUE";
+            
+            $stmt = $this->pdo->prepare($sql);
+            $params = [
+                ':destino' => $this->v_destino,
+                ':cantmax' => $this->v_cantmaxpasajeros,
+                ':importe' => $this->v_importe,
+                ':idempresa' => $this->objEmpresa->getIdEmpresa(),
+                ':docresponsable' => $this->objResponsableV->getDocumento(),
+                ':id' => $this->id_viaje
+            ];
+            
+            $resultado = $stmt->execute($params);
+            
         } catch (PDOException $e) {
-            $this->setMensajeError("Error al modificar Viaje: " . $e->getMessage());
+            $this->mensajeError = "Error al modificar Viaje: " . $e->getMessage();
         }
+        
         return $resultado;
     }
 
-    public function eliminar() {
-        $resultado = false;
-        $this->setMensajeError("");
-        $sqlViaje = "UPDATE viaje SET activo = FALSE WHERE id_viaje = ? AND activo = TRUE";
-        try {
-            $stmtViaje = $this->getPdo()->prepare($sqlViaje);
-            if ($stmtViaje->execute([$this->getIdViaje()])) {
-                // Borrado lógico en participa: desactivar todas las participaciones de ese viaje
-                $sqlParticipa = "UPDATE participa SET activo = FALSE WHERE id_viaje = ?";
-                $stmtParticipa = $this->getPdo()->prepare($sqlParticipa);
-                $stmtParticipa->execute([$this->getIdViaje()]);
-                $this->setActivo(false);
-                $resultado = true;
-            } else {
-                $this->setMensajeError("El viaje no existe o ya está eliminado.");
+  public function eliminar() {
+    $resultado = false;
+    $this->setMensajeError("");
+
+    try {
+        // 1. Obtener todos los pasajeros del viaje
+        $participa = new Participa();
+        $pasajeros = $participa->listarPasajerosPorViaje($this->id_viaje);
+        $documentosPasajeros = array_map(fn($p) => $p->getDocumento(), $pasajeros);
+
+        // 2. Desactivar todas las participaciones del viaje
+        $this->pdo->exec("UPDATE participa SET activo = FALSE WHERE id_viaje = " . $this->id_viaje);
+
+        // 3. Desactivar solo los pasajeros que no estén en otros viajes activos
+        foreach (array_unique($documentosPasajeros) as $doc) {
+            // Verificar si el pasajero está en otros viajes activos
+            $sql = "SELECT COUNT(*) FROM participa p 
+                         JOIN viaje v ON p.id_viaje = v.id_viaje 
+                         WHERE p.documento = ? AND v.activo = TRUE AND p.id_viaje != ?";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$doc, $this->id_viaje]);
+            $count = $stmt->fetchColumn();
+            
+            // Solo desactivar si no está en otros viajes activos
+            if ($count == 0) {
+                $this->pdo->exec("UPDATE pasajero SET activo = FALSE WHERE documento = '$doc'");
             }
-        } catch (PDOException $e) {
-            $this->setMensajeError("Error al eliminar Viaje: " . $e->getMessage());
         }
-        return $resultado;
+
+        // 4. Desactivar el viaje
+        $sql = "UPDATE viaje SET activo = FALSE WHERE id_viaje = ?";
+        $stmt = $this->pdo->prepare($sql);
+        $resultado = $stmt->execute([$this->id_viaje]);
+
+    } catch (PDOException $e) {
+        $this->setMensajeError("Error al eliminar: " . $e->getMessage());
     }
 
-    public function reactivar() {
-        $resultado = false;
-        $this->setMensajeError("");
-        $sql = "UPDATE viaje SET activo = TRUE WHERE id_viaje = ? AND activo = FALSE";
-        try {
-            $stmt = $this->getPdo()->prepare($sql);
-            $resultado = $stmt->execute([$this->getIdViaje()]);
-            if ($stmt->rowCount() > 0) {
-                $this->setActivo(true);
-                // Reactivar también las participaciones
-                $sqlParticipa = "UPDATE participa SET activo = TRUE WHERE id_viaje = ?";
-                $stmtParticipa = $this->getPdo()->prepare($sqlParticipa);
-                $stmtParticipa->execute([$this->getIdViaje()]);
-            } else {
-                $this->setMensajeError("El viaje no existe o ya está activo.");
-                $resultado = false;
-            }
-        } catch (PDOException $e) {
-            $this->setMensajeError("Error al reactivar Viaje: " . $e->getMessage());
-        }
-        return $resultado;
+    return $resultado;
     }
 
     public function buscar($id) {
         $resultado = false;
-        $sql = "SELECT * FROM viaje WHERE id_viaje = ? AND activo = TRUE";
+        
         try {
-            $stmt = $this->getPdo()->prepare($sql);
+            $sql = "SELECT * FROM viaje WHERE id_viaje = ? AND activo = TRUE";
+            $stmt = $this->pdo->prepare($sql);
+            
             if ($stmt->execute([$id])) {
-                if ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($fila) {
                     $empresa = new Empresa();
-                    $empresa->buscar($fila['id_empresa']);
                     $responsable = new ResponsableV();
-                    $responsable->buscar($fila['r_numeroempleado']);
                     
-                    $this->cargar(
-                        $fila['id_viaje'],
-                        $fila['v_destino'],
-                        $fila['v_cantmaxpasajeros'],
-                        $fila['v_importe'],
-                        $empresa,
-                        $responsable,
-                        [], // colección pasajeros vacía inicialmente
-                        $fila['activo']
-                    );
-
-                    // Cargar pasajeros activos relacionados
-                    $this->colPasajeros = $this->cargarPasajeros($id);
-                    $resultado = true;
+                    if ($empresa->buscar($fila['id_empresa']) && $responsable->buscar($fila['documento_responsable'])) {
+                        $this->cargar(
+                            $fila['v_destino'],
+                            $fila['v_cantmaxpasajeros'],
+                            $fila['v_importe'],
+                            $empresa,
+                            $responsable,
+                            $fila['activo']
+                        );
+                        
+                        $this->id_viaje = $fila['id_viaje'];
+                        $this->colPasajeros = $this->cargarPasajeros($id);
+                        $resultado = true;
+                    } else {
+                        $this->mensajeError = "No se pudo cargar empresa o responsable";
+                    }
+                } else {
+                    $this->mensajeError = "Viaje no encontrado";
                 }
             }
+            
         } catch (PDOException $e) {
-            $this->setMensajeError("Error al buscar Viaje: " . $e->getMessage());
+            $this->mensajeError = "Error al buscar Viaje: " . $e->getMessage();
         }
+        
         return $resultado;
     }
 
     public function listar($condicion = "") {
-        $arregloViaje = null;
-        $sql = "SELECT * FROM viaje WHERE activo = TRUE";
-        if ($condicion != "") {
-            $sql .= " AND " . $condicion;
-        }
-        $sql .= " ORDER BY id_viaje";
-
+        $viajes = [];
+        
         try {
-            $stmt = $this->getPdo()->prepare($sql);
+            $sql = "SELECT * FROM viaje WHERE activo = TRUE";
+            if ($condicion != "") {
+                $sql .= " AND " . $condicion;
+            }
+            $sql .= " ORDER BY id_viaje";
+            
+            $stmt = $this->pdo->prepare($sql);
+            
             if ($stmt->execute()) {
-                $arregloViaje = [];
                 while ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
                     $viaje = new Viaje();
-                    $empresa = new Empresa();
-                    $empresa->buscar($fila['id_empresa']);
-                    $responsable = new ResponsableV();
-                    $responsable->buscar($fila['r_numeroempleado']);
-                    $viaje->cargar(
-                        $fila['id_viaje'],
-                        $fila['v_destino'],
-                        $fila['v_cantmaxpasajeros'],
-                        $fila['v_importe'],
-                        $empresa,
-                        $responsable,
-                        [], // pasajeros vacíos
-                        $fila['activo']
-                    );
-
-                    // Cargar pasajeros para cada viaje
-                    $viaje->setColPasajeros($this->cargarPasajeros($fila['id_viaje']));
-
-                    $arregloViaje[] = $viaje;
+                    if ($viaje->buscar($fila['id_viaje'])) {
+                        $viajes[] = $viaje;
+                    }
                 }
             }
+            
         } catch (PDOException $e) {
-            $this->setMensajeError("Error en listar Viaje: " . $e->getMessage());
+            $this->mensajeError = "Error al listar Viajes: " . $e->getMessage();
         }
-        return $arregloViaje;
+        
+        return $viajes;
     }
 
     public function __toString() {
-        $estado = $this->getActivo() ? "ACTIVO" : "ELIMINADO";
-        return "Viaje [ID: " . $this->getIdViaje() .
-            ", Destino: " . $this->getDestino() .
-            ", Cant Max: " . $this->getCantMaxPasajeros() .
-            ", Importe: " . $this->getImporte() .
-            ", Empresa: " . $this->getEmpresa()->getIdEmpresa() .
-            ", Empleado: " . $this->getResponsable()->getIdResponsable() .
-            ", Estado: " . $estado . "]";
+        $empresaNombre = $this->objEmpresa ? $this->objEmpresa->getNombre() : "Sin empresa";
+        $responsableNombre = $this->objResponsableV ? $this->objResponsableV->getNombre() . " " . $this->objResponsableV->getApellido() : "Sin responsable";
+        
+        return sprintf(
+            "Viaje ID: %d | Destino: %s | Capacidad: %d | Importe: %.2f | Empresa: %s | Responsable: %s",
+            $this->id_viaje,
+            $this->v_destino,
+            $this->v_cantmaxpasajeros,
+            $this->v_importe,
+            $empresaNombre,
+            $responsableNombre
+        );
     }
 
-    public function ColPasajerosStr(){
-        $unaColeccion = $this->getColPasajeros();
-        $coleccionStr = "No hay elementos";
-        if ($unaColeccion != null && count($unaColeccion) > 0){
-            $coleccionStr = "";
-            foreach ($unaColeccion as $elemento){
-                $coleccionStr .= "\n" . $elemento;
+    public function ColPasajerosStr() {
+        $str = "";
+        
+        if (empty($this->colPasajeros)) {
+            $str = "No hay pasajeros registrados";
+        } else {
+            $str = "Pasajeros:\n";
+            $i = 0;
+            $cantPasajeros = count($this->colPasajeros);
+            
+            while ($i < $cantPasajeros) {
+                $pasajero = $this->colPasajeros[$i];
+                $str .= "- " . $pasajero->getNombre() . " " . $pasajero->getApellido() . " (Doc: " . $pasajero->getDocumento() . ")\n";
+                $i++;
             }
-            $coleccionStr .= "\n";
         }
-        return $coleccionStr;
+        
+        return $str;
     }
 }
 ?>

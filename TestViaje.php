@@ -3,250 +3,300 @@ include_once 'Empresa.php';
 include_once 'ResponsableV.php';
 include_once 'Viaje.php';
 include_once 'Pasajero.php';
+include_once 'Persona.php';
 
 class TestViajes {
 
-    // Operaciones sobre Empresa
-
-    public function verEmpresas() {
-        $empresa = new Empresa();
-        $empresas = $empresa->listar();
-        $resultado = "";
-
-        if ($empresas === null || count($empresas) === 0) {
-            $resultado = "No hay empresas registradas.<br>";
+    // Personas
+    public function insertarPersona($documento, $nombre, $apellido) {
+        $persona = new Persona();
+        $persona->cargar($documento, $nombre, $apellido); // Documento sí va acá
+        if ($persona->insertar()) {
+            echo "Persona insertada con éxito. Documento: $documento<br>";
+            return true;
         } else {
-            foreach ($empresas as $e) {
-                $resultado .= "ID: " . $e->getIdEmpresa() . " | Nombre: " . $e->getNombre() . " | Dirección: " . $e->getDireccion() . "<br>";
-            }
+            echo "Error insertar persona: " . $persona->getMensajeError() . "<br>";
+            return false;
         }
+    }
 
+    public function eliminarPersona($documento) {
+        $persona = new Persona();
+        if ($persona->buscar($documento)) {
+            if ($persona->eliminar()) {
+                echo "Persona eliminada con éxito. Documento: $documento<br>";
+                return true;
+            } else {
+                echo "Error eliminar persona: " . $persona->getMensajeError() . "<br>";
+            }
+        } else {
+            echo "No se encontró la persona con documento $documento<br>";
+        }
+        return false;
+    }
+
+    public function verPersonas() {
+        $persona = new Persona();
+        $personas = $persona->listar();
+        if (empty($personas)) {
+            return "No hay personas registradas.<br>";
+        }
+        $resultado = "";
+        foreach ($personas as $p) {
+            $resultado .= "Documento: " . $p->getDocumento() . " | Nombre: " . $p->getNombre() . " " . $p->getApellido() . "<br>";
+        }
         return $resultado;
     }
 
+    // Empresas
     public function insertarEmpresa($nombre, $direccion) {
         $empresa = new Empresa();
-        $empresa->cargar($nombre, $direccion); 
-        $resultado = null;
+        $empresa->cargar($nombre, $direccion); // SIN ID aquí
         if ($empresa->insertar()) {
             echo "Empresa insertada con éxito. ID: " . $empresa->getIdEmpresa() . "<br>";
-            $resultado = $empresa;
+            return $empresa;
         } else {
-            echo $empresa->getMensajeError() . "<br>";
+            echo "Error insertar empresa: " . $empresa->getMensajeError() . "<br>";
+            return null;
         }
-        return $resultado;
-    }
-
-    public function modificarEmpresa($idEmpresa, $nombre, $direccion) {
-        $empresa = new Empresa();
-        $resultado = false;
-        if ($empresa->buscar($idEmpresa)) {
-            $empresa->cargar($nombre, $direccion);
-            $empresa->setIdEmpresa($idEmpresa);
-            if ($empresa->modificar()) {
-                echo "Empresa modificada con éxito.<br>";
-                $resultado = true;
-            } else {
-                echo $empresa->getMensajeError() . "<br>";
-            }
-        } else {
-            echo "No se encontró la empresa con ID $idEmpresa<br>";
-        }
-        return $resultado;
     }
 
     public function eliminarEmpresa($idEmpresa) {
         $empresa = new Empresa();
-        $resultado = false;
         if ($empresa->buscar($idEmpresa)) {
             if ($empresa->eliminar()) {
-                echo "Empresa eliminada con éxito.<br>";
-                $resultado = true;
+                echo "Empresa eliminada con éxito. ID: $idEmpresa<br>";
+                return true;
             } else {
-                echo $empresa->getMensajeError() . "<br>";
+                echo "Error eliminar empresa: " . $empresa->getMensajeError() . "<br>";
             }
         } else {
             echo "No se encontró la empresa con ID $idEmpresa<br>";
         }
+        return false;
+    }
+
+    public function verEmpresas() {
+        $empresa = new Empresa();
+        $empresas = $empresa->listar();
+        if (empty($empresas)) {
+            return "No hay empresas registradas.<br>";
+        }
+        $resultado = "";
+        foreach ($empresas as $e) {
+            $resultado .= "ID: " . $e->getIdEmpresa() . " | Nombre: " . $e->getNombre() . " | Dirección: " . $e->getDireccion() . "<br>";
+        }
         return $resultado;
     }
 
-    // Operaciones sobre Viaje
+    // Viajes
+    public function insertarViaje($destino, $cantMaxPasajeros, $importe, $idEmpresa, $documentoResponsable, $colPasajeros = []) {
+        $empresa = new Empresa();
+        if (!$empresa->buscar($idEmpresa)) {
+            echo "No se encontró la empresa con ID $idEmpresa<br>";
+            return false;
+        }
+
+        $responsable = new ResponsableV();
+        if (!$responsable->buscar($documentoResponsable)) {
+            echo "No se encontró el responsable con documento $documentoResponsable<br>";
+            return false;
+        }
+
+        $viaje = new Viaje();
+        $viaje->cargar($destino, $cantMaxPasajeros, $importe, $empresa, $responsable); // SIN ID aquí
+
+        if ($viaje->insertar()) {
+            echo "Viaje insertado con éxito. ID: " . $viaje->getIdViaje() . "<br>";
+            return $viaje;
+        } else {
+            echo "Error insertar viaje: " . $viaje->getMensajeError() . "<br>";
+            return false;
+        }
+    }
+
+    public function eliminarViaje($idViaje) {
+        $viaje = new Viaje();
+        if ($viaje->buscar($idViaje)) {
+            if ($viaje->eliminar()) {
+                echo "Viaje eliminado con éxito. ID: $idViaje<br>";
+                return true;
+            } else {
+                echo "Error eliminar viaje: " . $viaje->getMensajeError() . "<br>";
+            }
+        } else {
+            echo "No se encontró el viaje con ID $idViaje<br>";
+        }
+        return false;
+    }
 
     public function verViajes() {
         $viaje = new Viaje();
         $viajes = $viaje->listar();
+        if (empty($viajes)) {
+            return "No hay viajes registrados.<br>";
+        }
         $resultado = "";
-
-        if ($viajes === null || count($viajes) === 0) {
-            $resultado = "No hay viajes registrados.<br>";
-        } else {
-            foreach ($viajes as $v) {
-                $resultado .= "ID: " . $v->getIdViaje() . " | Destino: " . $v->getDestino() .
+        foreach ($viajes as $v) {
+            $resultado .= "ID: " . $v->getIdViaje() . " | Destino: " . $v->getDestino() .
                 " | Cantidad Máxima: " . $v->getCantMaxPasajeros() .
                 " | Importe: " . $v->getImporte() .
                 " | Empresa: " . $v->getEmpresa()->getNombre() .
                 " | Responsable: " . $v->getResponsable()->getNombre() . " " . $v->getResponsable()->getApellido() . "<br>" .
                 "Colección Pasajeros: <br>" . nl2br($v->ColPasajerosStr()) . "<br><br>";
-            }
         }
-
         return $resultado;
     }
 
-    public function insertarViaje($destino, $cantMaxPasajeros, $importe, $idEmpresa, $numEmpleadoResponsable, $colPasajeros = []) {
-        $resultado = false;
-        $encontrado = true;
-        $mensajeErrorBuscar = "";
-
-        $empresa = new Empresa();
+    // Responsable
+    public function asignarResponsable($documento, $licencia) {
         $responsable = new ResponsableV();
-
-        if (!$empresa->buscar($idEmpresa)) {
-            $mensajeErrorBuscar .= "No se encontró la empresa con ID $idEmpresa<br>";
-            $encontrado = false;
-        }
-
-        if (!$responsable->buscar($numEmpleadoResponsable)) {
-            $mensajeErrorBuscar .= "No se encontró el responsable con número $numEmpleadoResponsable<br>";
-            $encontrado = false;
-        }
-
-        $viaje = new Viaje();
-        $viaje->cargar(null, $destino, $cantMaxPasajeros, $importe, $empresa, $responsable, $colPasajeros);
-
-        if ($encontrado && $viaje->insertar()) {
-            echo "Viaje insertado con éxito. ID: " . $viaje->getIdViaje() . "<br>";
-            $resultado = $viaje;
+        if ($responsable->asignarComoResponsable($documento, $licencia)) {
+            echo "Responsable asignado con éxito. Documento: $documento<br>";
+            return true;
         } else {
-            echo $mensajeErrorBuscar;
-            echo $viaje->getMensajeError() . "<br>";
+            echo "Error asignar responsable: " . $responsable->getMensajeError() . "<br>";
+            return false;
         }
-
-        return $resultado;
     }
 
-    public function modificarViaje($idViaje, $destino, $cantMaxPasajeros, $importe, $idEmpresa, $numEmpleadoResponsable) {
-        $resultado = false;
-        $viaje = new Viaje();
-        if (!$viaje->buscar($idViaje)) {
-            echo "No se encontró el viaje con ID $idViaje<br>";
-        } else {
-            $empresa = new Empresa();
-            $responsable = new ResponsableV();
-
-            if (!$empresa->buscar($idEmpresa)) {
-                echo "No se encontró la empresa con ID $idEmpresa<br>";
-            } elseif (!$responsable->buscar($numEmpleadoResponsable)) {
-                echo "No se encontró el responsable con número $numEmpleadoResponsable<br>";
+    public function eliminarResponsable($documento) {
+        $responsable = new ResponsableV();
+        if ($responsable->buscar($documento)) {
+            if ($responsable->eliminar()) {
+                echo "Responsable eliminado con éxito. Documento: $documento<br>";
+                return true;
             } else {
-                $viaje->cargar($idViaje, $destino, $cantMaxPasajeros, $importe, $empresa, $responsable);
-                if ($viaje->modificar()) {
-                    echo "Viaje modificado con éxito.<br>";
-                    $resultado = true;
-                } else {
-                    echo $viaje->getMensajeError() . "<br>";
-                }
-            }
-        }
-        return $resultado;
-    }
-
-    public function eliminarViaje($idViaje) {
-        $resultado = false;
-        $viaje = new Viaje();
-        if ($viaje->buscar($idViaje)) {
-            if ($viaje->eliminar()) {
-                echo "Viaje eliminado con éxito.<br>";
-                $resultado = true;
-            } else {
-                echo $viaje->getMensajeError() . "<br>";
+                echo "Error eliminar responsable: " . $responsable->getMensajeError() . "<br>";
             }
         } else {
-            echo "No se encontró el viaje con ID $idViaje<br>";
+            echo "No se encontró el responsable con documento $documento<br>";
         }
-        return $resultado;
+        return false;
     }
-
-    // Operaciones sobre Responsable
 
     public function verResponsables() {
         $responsable = new ResponsableV();
-        $responsables = $responsable->listar();
+        $responsables = $responsable->listar(" WHERE r.activo = TRUE"); // Filtramos solo activos
+        
+        if (empty($responsables)) {
+            return "No hay responsables activos registrados.<br>";
+        }
+        
         $resultado = "";
+        foreach ($responsables as $r) {
+            $resultado .= "Responsable Documento: " . $r->getDocumento() . 
+                        " | Licencia: " . $r->getNumLicencia() .
+                        " | Nombre: " . $r->getNombre() . " " . $r->getApellido() . "<br>";
+        }
+        
+        return $resultado;
+    }
 
-        if ($responsables === null || count($responsables) === 0) {
-            $resultado = "No hay responsables registrados.<br>";
-        } else {
-            foreach ($responsables as $r) {
-                $resultado .= "Responsable Nº: " . $r->getIdResponsable() . " | Licencia: " . $r->getNumLicencia() . " | Nombre: " . $r->getNombre() . " " . $r->getApellido() . "<br>";
+    public function asignarPasajero($documento, $telefono, $idViaje) {
+    $resultado = false;
+    $mensajeError = "";
+
+    // 1. Verificar si el viaje existe
+    $viaje = new Viaje();
+    $participa = new Participa();
+    $pasajero = new Pasajero();
+    
+    if ($viaje->buscar($idViaje)) {
+        // 2. Verificar si el pasajero ya está asignado al viaje
+        $participa->setIdViaje($idViaje);
+        $participa->setDocumento($documento);
+        
+        if (!$participa->buscar($idViaje, $documento, true)) {
+            // 3. Crear/verificar pasajero
+            if ($pasajero->buscar($documento) || $pasajero->asignarComoPasajero($documento, $telefono)) {
+                // 4. Asignar al viaje (participa)
+                if ($participa->insertar()) {
+                    $resultado = true;
+                    $mensajeError = "Pasajero asignado con éxito al viaje.<br>";
+                } else {
+                    $mensajeError = "Error al vincular al viaje: " . $participa->getMensajeError() . "<br>";
+                }
+            } else {
+                $mensajeError = "Error al registrar pasajero: " . $pasajero->getMensajeError() . "<br>";
             }
-        }
-
-        return $resultado;
-    }
-
-    public function insertarResponsable($nroLicencia, $nombre, $apellido) {
-        $resultado = null;
-        $responsable = new ResponsableV();
-        $responsable->cargar($nroLicencia, $nombre, $apellido);
-        if ($responsable->insertar()) {
-            echo "Responsable insertado con éxito. Número: " . $responsable->getIdResponsable() . "<br>";
-            $resultado = $responsable;
         } else {
-            echo $responsable->getMensajeError() . "<br>";
+            $mensajeError = "Error: El pasajero ya está registrado en este viaje<br>";
         }
+    } else {
+        $mensajeError = "Error: El viaje con ID $idViaje no existe<br>";
+    }
+
+        echo $mensajeError;
         return $resultado;
     }
 
-    // Operaciones sobre Pasajero
+    public function eliminarPasajero($documento) {
+        $pasajero = new Pasajero();
+        if ($pasajero->buscar($documento)) {
+            if ($pasajero->eliminar()) {
+                echo "Pasajero eliminado con éxito. Documento: $documento<br>";
+                return true;
+            } else {
+                echo "Error eliminar pasajero: " . $pasajero->getMensajeError() . "<br>";
+            }
+        } else {
+            echo "No se encontró el pasajero con documento $documento<br>";
+        }
+        return false;
+    }
 
     public function verPasajeros() {
         $pasajero = new Pasajero();
-        $pasajeros = $pasajero->listar();
+        $pasajeros = $pasajero->listar(" WHERE p.activo = TRUE"); // Filtramos solo activos
+        
+        if (empty($pasajeros)) {
+            return "No hay pasajeros activos registrados.<br>";
+        }
+        
         $resultado = "";
-
-        if ($pasajeros === null || count($pasajeros) === 0) {
-            $resultado = "No hay pasajeros registrados.<br>";
-        } else {
-            foreach ($pasajeros as $p) {
-                $resultado .= "Documento: " . $p->getDocumento() . " | Nombre: " . $p->getNombre() . " " . $p->getApellido() . " | Teléfono: " . $p->getTelefono() . "<br>";
-            }
+        foreach ($pasajeros as $p) {
+            $resultado .= "Pasajero Documento: " . $p->getDocumento() . 
+                        " | Teléfono: " . $p->getTelefono() . 
+                        " | Nombre: " . $p->getNombre() . " " . $p->getApellido() . "<br>";
         }
-        return $resultado;
-    }
-
-    public function insertarPasajero($documento, $nombre, $apellido, $telefono, $idViaje) {
-        $resultado = null;
-        $viaje = new Viaje();
-
-        if ($viaje->buscar($idViaje)) {
-            $pasajero = new Pasajero();
-            $pasajero->cargar($documento, $nombre, $apellido, $telefono);
-            if ($pasajero->insertar()) {
-                $pasajero->agregarViaje($idViaje);
-                echo "Pasajero insertado con éxito. Documento: " . $documento . "<br>";
-                $resultado = $pasajero;
-            } else {
-                echo $pasajero->getMensajeError() . "<br>";
-            }
-        } else {
-            echo "No se encontró el viaje con ID: $idViaje<br>";
-        }
-
+        
         return $resultado;
     }
 }
 
-// Ejemplo de uso
+
+// Ejemplo de uso completo con orden correcto
 $test = new TestViajes();
 
-// $test->insertarEmpresa("Aerolineas Argentinas", "Av. Argentina 123");
-// $test->insertarResponsable(123456, "Lucas", "Martinez");
-// $test->insertarViaje("Mar del Pepe", 50, 2000, 1, 1);
-// $test->insertarPasajero("48294", "Marza", "Chavi", "2995565790", 1);
-// $test->eliminarViaje(1);
-// echo $test->verViajes();
-// echo $test->verPasajeros();
-?>
 
+
+// 1. Insertar persona
+// $test->insertarPersona("2", "Lucas", "Peroncha");
+
+// 2. Asignar responsable (dni, num_licencia)
+// $test->asignarResponsable("2", 12345);
+
+// 3. Insertar empresa 
+// $empresa = $test->insertarEmpresa("Aerolineas Argentinas", "Av. Argentina 123");
+
+// $test->eliminarEmpresa(1);
+
+
+
+// 4. Insertar viaje con el responsable y empresa creados
+
+// $test->insertarViaje("Mar del Pepe", 50, 2000, 1, "2");
+
+
+// Asignar pasajero (doc, tel, id_viaje)
+// $test->asignarPasajero("2", 29998889, 1);
+
+
+// echo $test->verPasajeros();
+
+// Borrado logico
+// $test->eliminarViaje(1);
+
+// 5. Mostrar viajes
+// echo $test->verViajes();

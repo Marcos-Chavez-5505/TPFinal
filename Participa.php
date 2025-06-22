@@ -4,169 +4,180 @@ require_once 'Viaje.php';
 require_once 'Pasajero.php';
 
 class Participa {
-    private $id_viaje;
-    private $p_documento;
+    private $idViaje;
+    private $documento;
     private $activo;
     private $pdo;
     private $mensajeError;
 
     public function __construct() {
-        $this->id_viaje = null;
-        $this->p_documento = "";
+        $this->idViaje = null;
+        $this->documento = "";
         $this->activo = true;
         $this->pdo = conectarBD();
         $this->mensajeError = "";
     }
 
-    // Getters
-    public function getIdViaje() { return $this->id_viaje; }
-    public function getPDocumento() { return $this->p_documento; }
+    // Getters y Setters (se mantienen igual)
+    public function getIdViaje() { return $this->idViaje; }
+    public function getDocumento() { return $this->documento; }
     public function getActivo() { return $this->activo; }
     public function getMensajeError() { return $this->mensajeError; }
 
-    // Setters
-    public function setIdViaje($id) { $this->id_viaje = $id; }
-    public function setPDocumento($doc) { $this->p_documento = $doc; }
+    public function setIdViaje($id) { $this->idViaje = $id; }
+    public function setDocumento($doc) { $this->documento = $doc; }
     public function setActivo($activo) { $this->activo = $activo; }
     public function setMensajeError($msg) { $this->mensajeError = $msg; }
 
-    // Insertar relación pasajero-viaje (participación activa)
     public function insertar() {
-        // Verifica si ya existe (activo o inactivo)
-        if ($this->buscar($this->getIdViaje(), $this->getPDocumento(), false)) {
-            return $this->reactivar();
-        }
-
-        $sql = "INSERT INTO participa (id_viaje, p_documento, activo) VALUES (?, ?, ?)";
+        $resultado = false;
+        $this->setMensajeError("");
+        
         try {
+            $sql = "INSERT INTO participa (id_viaje, documento, activo) VALUES (?, ?, TRUE)";
             $stmt = $this->pdo->prepare($sql);
-            return $stmt->execute([$this->getIdViaje(), $this->getPDocumento(), true]);
+            $resultado = $stmt->execute([$this->getIdViaje(), $this->getDocumento()]);
+            
+            if (!$resultado) {
+                $this->setMensajeError("No se pudo insertar la participación");
+            }
         } catch (PDOException $e) {
-            $this->setMensajeError("Error al insertar Participa: " . $e->getMessage());
-            return false;
+            $this->setMensajeError("Error al insertar: " . $e->getMessage());
         }
+        
+        return $resultado;
     }
 
-    // Borrado lógico: desactivar participación
     public function eliminar() {
-        $sql = "UPDATE participa SET activo = FALSE WHERE id_viaje = ? AND p_documento = ? AND activo = TRUE";
+        $resultado = false;
+        $this->setMensajeError("");
+        
         try {
+            $sql = "UPDATE participa SET activo = FALSE WHERE id_viaje = ? AND documento = ? AND activo = TRUE";
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$this->getIdViaje(), $this->getPDocumento()]);
-            $actualizadas = $stmt->rowCount();
-            if ($actualizadas > 0) {
+            $resultado = $stmt->execute([$this->getIdViaje(), $this->getDocumento()]);
+            
+            if ($resultado) {
                 $this->setActivo(false);
             } else {
-                $this->setMensajeError("No existe la participación activa para eliminar.");
+                $this->setMensajeError("No se encontró participación activa para eliminar");
             }
-            return $actualizadas > 0;
         } catch (PDOException $e) {
-            $this->setMensajeError("Error al eliminar Participa: " . $e->getMessage());
-            return false;
+            $this->setMensajeError("Error al eliminar: " . $e->getMessage());
         }
+        
+        return $resultado;
     }
 
-    // Reactivar una participación eliminada (opcional)
-    public function reactivar() {
-        $sql = "UPDATE participa SET activo = TRUE WHERE id_viaje = ? AND p_documento = ? AND activo = FALSE";
+    public function buscar($idViaje, $documento, $soloActivos = true) {
+        $resultado = false;
+        $this->setMensajeError("");
+        
         try {
-            $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$this->getIdViaje(), $this->getPDocumento()]);
-            $reactivadas = $stmt->rowCount();
-            if ($reactivadas > 0) {
-                $this->setActivo(true);
-            } else {
-                $this->setMensajeError("No existe la participación inactiva para reactivar.");
+            $sql = "SELECT * FROM participa WHERE id_viaje = ? AND documento = ?";
+            if ($soloActivos) {
+                $sql .= " AND activo = TRUE";
             }
-            return $reactivadas > 0;
-        } catch (PDOException $e) {
-            $this->setMensajeError("Error al reactivar Participa: " . $e->getMessage());
-            return false;
-        }
-    }
-
-    // Buscar participación específica, activa o no según parámetro
-    public function buscar($id_viaje, $p_documento, $soloActivos = true) {
-        $sql = "SELECT * FROM participa WHERE id_viaje = ? AND p_documento = ?";
-        if ($soloActivos) {
-            $sql .= " AND activo = TRUE";
-        }
-
-        try {
+            
             $stmt = $this->pdo->prepare($sql);
-            if ($stmt->execute([$id_viaje, $p_documento])) {
-                if ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            if ($stmt->execute([$idViaje, $documento])) {
+                $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($fila) {
                     $this->setIdViaje($fila['id_viaje']);
-                    $this->setPDocumento($fila['p_documento']);
+                    $this->setDocumento($fila['documento']);
                     $this->setActivo($fila['activo']);
-                    return true;
+                    $resultado = true;
                 }
             }
         } catch (PDOException $e) {
-            $this->setMensajeError("Error al buscar Participa: " . $e->getMessage());
+            $this->setMensajeError("Error al buscar: " . $e->getMessage());
         }
-        return false;
+        
+        return $resultado;
     }
 
-    // Listar pasajeros activos de un viaje
-    public function listarPasajerosPorViaje($id_viaje) {
+    public function listarPasajerosPorViaje($idViaje) {
         $lista = [];
-        $sql = "SELECT p.* FROM pasajero p
-                INNER JOIN participa pa ON p.p_documento = pa.p_documento
-                WHERE pa.id_viaje = ? AND pa.activo = TRUE AND p.activo = TRUE";
+        $this->setMensajeError("");
+        
         try {
+            $sql = "SELECT p.documento, p.nombre, p.apellido, ps.p_telefono as telefono 
+                    FROM persona p
+                    JOIN pasajero ps ON p.documento = ps.documento
+                    JOIN participa pa ON p.documento = pa.documento
+                    WHERE pa.id_viaje = ? AND pa.activo = TRUE 
+                    AND p.activo = TRUE AND ps.activo = TRUE";
+            
             $stmt = $this->pdo->prepare($sql);
-            if ($stmt->execute([$id_viaje])) {
+            if ($stmt->execute([$idViaje])) {
                 while ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
                     $pasajero = new Pasajero();
                     $pasajero->cargar(
-                        $fila['p_documento'],
-                        $fila['p_nombre'],
-                        $fila['p_apellido'],
-                        $fila['p_telefono']
+                        $fila['documento'],
+                        $fila['nombre'],
+                        $fila['apellido'],
+                        $fila['telefono']
                     );
-                    $pasajero->setActivo($fila['activo']);
                     $lista[] = $pasajero;
                 }
             }
         } catch (PDOException $e) {
-            $this->setMensajeError("Error al listar pasajeros por viaje: " . $e->getMessage());
+            $this->setMensajeError("Error al listar pasajeros: " . $e->getMessage());
         }
+        
         return $lista;
     }
 
-    // Listar viajes activos de un pasajero
-    public function listarViajesPorPasajero($p_documento) {
+    public function listarViajesPorPasajero($documento) {
         $lista = [];
-        $sql = "SELECT v.* FROM viaje v
-                INNER JOIN participa pa ON v.id_viaje = pa.id_viaje
-                WHERE pa.p_documento = ? AND pa.activo = TRUE AND v.activo = TRUE";
+        $this->setMensajeError("");
+        
         try {
+            $sql = "SELECT v.* FROM viaje v
+                    INNER JOIN participa pa ON v.id_viaje = pa.id_viaje
+                    WHERE pa.documento = ? AND pa.activo = TRUE AND v.activo = TRUE";
+            
             $stmt = $this->pdo->prepare($sql);
-            if ($stmt->execute([$p_documento])) {
+            if ($stmt->execute([$documento])) {
                 while ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                    $empresa = new Empresa();
-                    $empresa->buscar($fila['id_empresa']);
-                    $responsable = new ResponsableV();
-                    $responsable->buscar($fila['r_numeroempleado']);
                     $viaje = new Viaje();
-                    $viaje->cargar(
-                        $fila['id_viaje'],
-                        $fila['v_destino'],
-                        $fila['v_cantmaxpasajeros'],
-                        $fila['v_importe'],
-                        $empresa,
-                        $responsable,
-                        [], // pasajeros vacíos
-                        $fila['activo']
-                    );
-                    $lista[] = $viaje;
+                    if ($viaje->buscar($fila['id_viaje'])) {
+                        $lista[] = $viaje;
+                    }
                 }
             }
         } catch (PDOException $e) {
-            $this->setMensajeError("Error al listar viajes por pasajero: " . $e->getMessage());
+            $this->setMensajeError("Error al listar viajes: " . $e->getMessage());
         }
+        
         return $lista;
+    }
+
+    public function listar($condicion = "") {
+        $participaciones = [];
+        $this->setMensajeError("");
+        
+        try {
+            $sql = "SELECT * FROM participa WHERE activo = TRUE";
+            if (!empty($condicion)) {
+                $sql .= " AND " . $condicion;
+            }
+            
+            $stmt = $this->pdo->prepare($sql);
+            if ($stmt->execute()) {
+                while ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $obj = new Participa();
+                    $obj->setIdViaje($fila['id_viaje']);
+                    $obj->setDocumento($fila['documento']);
+                    $obj->setActivo($fila['activo']);
+                    $participaciones[] = $obj;
+                }
+            }
+        } catch (PDOException $e) {
+            $this->setMensajeError("Error al listar participaciones: " . $e->getMessage());
+        }
+        
+        return $participaciones;
     }
 }
 ?>
