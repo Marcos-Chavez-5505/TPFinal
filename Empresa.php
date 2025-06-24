@@ -84,22 +84,23 @@ class Empresa {
         // Verificar si la empresa tiene viajes activos
         if ($this->tieneViajesActivos()) {
             $this->setMensajeError("No se puede eliminar: la empresa tiene viajes activos");
-            return false;
+        }
+        else {
+            $sql = "UPDATE empresa SET activo = FALSE WHERE id_empresa = ? AND activo = TRUE";
+            try {
+                $stmt = $this->getPdo()->prepare($sql);
+                $resultado = $stmt->execute([$this->getIdEmpresa()]);
+                if ($stmt->rowCount() == 0) {
+                    $this->setMensajeError("No se puede eliminar: empresa no existe o ya está eliminada");
+                    $resultado = false;
+                } else {
+                    $this->setActivo(false);
+                }
+            } catch (PDOException $e) {
+                $this->setMensajeError("Error al eliminar Empresa: " . $e->getMessage());
+            }
         }
         
-        $sql = "UPDATE empresa SET activo = FALSE WHERE id_empresa = ? AND activo = TRUE";
-        try {
-            $stmt = $this->getPdo()->prepare($sql);
-            $resultado = $stmt->execute([$this->getIdEmpresa()]);
-            if ($stmt->rowCount() == 0) {
-                $this->setMensajeError("No se puede eliminar: empresa no existe o ya está eliminada");
-                $resultado = false;
-            } else {
-                $this->setActivo(false);
-            }
-        } catch (PDOException $e) {
-            $this->setMensajeError("Error al eliminar Empresa: " . $e->getMessage());
-        }
         return $resultado;
     }
 
@@ -130,14 +131,18 @@ class Empresa {
      */
     private function tieneViajesActivos() {
         $sql = "SELECT COUNT(*) as total FROM viaje WHERE id_empresa = ? AND activo = TRUE";
+        $respuesta = false;
         try {
             $stmt = $this->getPdo()->prepare($sql);
             $stmt->execute([$this->getIdEmpresa()]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            return $row['total'] > 0;
+            if ($row['total'] > 0){
+                $respuesta = true;
+            }
         } catch (PDOException $e) {
-            return true; // En caso de error, asumir que tiene viajes para evitar eliminación
+            $respuesta = true; // En caso de error, asumir que tiene viajes para evitar eliminación
         }
+        return $respuesta;
     }
 
     public function buscar($id) {
