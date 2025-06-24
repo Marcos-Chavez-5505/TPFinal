@@ -13,26 +13,28 @@ class TestViajes {
         $persona->cargar($documento, $nombre, $apellido); // Documento sí va acá
         if ($persona->insertar()) {
             echo "Persona insertada con éxito. Documento: $documento<br>";
-            return true;
+            $respuesta = true;
         } else {
             echo "Error insertar persona: " . $persona->getMensajeError() . "<br>";
-            return false;
+            $respuesta = false;
         }
+        return $respuesta;
     }
 
     public function eliminarPersona($documento) {
+        $respuesta = false;
         $persona = new Persona();
         if ($persona->buscar($documento)) {
             if ($persona->eliminar()) {
                 echo "Persona eliminada con éxito. Documento: $documento<br>";
-                return true;
+                $respuesta = true;
             } else {
                 echo "Error eliminar persona: " . $persona->getMensajeError() . "<br>";
             }
         } else {
             echo "No se encontró la persona con documento $documento<br>";
         }
-        return false;
+        return $respuesta;
     }
 
     public function verPersonas() {
@@ -54,26 +56,27 @@ class TestViajes {
         $empresa->cargar($nombre, $direccion); // SIN ID aquí
         if ($empresa->insertar()) {
             echo "Empresa insertada con éxito. ID: " . $empresa->getIdEmpresa() . "<br>";
-            return $empresa;
         } else {
             echo "Error insertar empresa: " . $empresa->getMensajeError() . "<br>";
-            return null;
+            $empresa = null;
         }
+        return $empresa;
     }
 
     public function eliminarEmpresa($idEmpresa) {
+        $respuesta = false;
         $empresa = new Empresa();
         if ($empresa->buscar($idEmpresa)) {
             if ($empresa->eliminar()) {
                 echo "Empresa eliminada con éxito. ID: $idEmpresa<br>";
-                return true;
+                $respuesta = true;
             } else {
                 echo "Error eliminar empresa: " . $empresa->getMensajeError() . "<br>";
             }
         } else {
             echo "No se encontró la empresa con ID $idEmpresa<br>";
         }
-        return false;
+        return $respuesta;
     }
 
     public function verEmpresas() {
@@ -108,7 +111,7 @@ class TestViajes {
 
         if ($viaje->insertar()) {
             echo "Viaje insertado con éxito. ID: " . $viaje->getIdViaje() . "<br>";
-            return $viaje;
+            return $viaje;                                                                              // ???
         } else {
             echo "Error insertar viaje: " . $viaje->getMensajeError() . "<br>";
             return false;
@@ -116,18 +119,19 @@ class TestViajes {
     }
 
     public function eliminarViaje($idViaje) {
+        $respuesta = false;
         $viaje = new Viaje();
         if ($viaje->buscar($idViaje)) {
             if ($viaje->eliminar()) {
                 echo "Viaje eliminado con éxito. ID: $idViaje<br>";
-                return true;
+                $respuesta = true;
             } else {
                 echo "Error eliminar viaje: " . $viaje->getMensajeError() . "<br>";
             }
         } else {
             echo "No se encontró el viaje con ID $idViaje<br>";
         }
-        return false;
+        return $respuesta;
     }
 
     public function verViajes() {
@@ -153,26 +157,28 @@ class TestViajes {
         $responsable = new ResponsableV();
         if ($responsable->asignarComoResponsable($documento, $licencia)) {
             echo "Responsable asignado con éxito. Documento: $documento<br>";
-            return true;
+            $respuesta = true;
         } else {
             echo "Error asignar responsable: " . $responsable->getMensajeError() . "<br>";
-            return false;
+            $respuesta = false;
         }
+        return $respuesta;
     }
 
     public function eliminarResponsable($documento) {
+        $respuesta = false;
         $responsable = new ResponsableV();
         if ($responsable->buscar($documento)) {
             if ($responsable->eliminar()) {
                 echo "Responsable eliminado con éxito. Documento: $documento<br>";
-                return true;
+                $respuesta = true;
             } else {
                 echo "Error eliminar responsable: " . $responsable->getMensajeError() . "<br>";
             }
         } else {
             echo "No se encontró el responsable con documento $documento<br>";
         }
-        return false;
+        return $respuesta;
     }
 
     public function verResponsables() {
@@ -232,18 +238,19 @@ class TestViajes {
     }
 
     public function eliminarPasajero($documento) {
+        $respuesta = false;
         $pasajero = new Pasajero();
         if ($pasajero->buscar($documento)) {
             if ($pasajero->eliminar()) {
                 echo "Pasajero eliminado con éxito. Documento: $documento<br>";
-                return true;
+                $respuesta = true;
             } else {
                 echo "Error eliminar pasajero: " . $pasajero->getMensajeError() . "<br>";
             }
         } else {
             echo "No se encontró el pasajero con documento $documento<br>";
         }
-        return false;
+        return $respuesta;
     }
 
     public function verPasajeros() {
