@@ -318,26 +318,25 @@ class Viaje {
             if ($stmt->rowCount() == 0) {
                 $this->setMensajeError("No se puede reactivar: el viaje no existe o ya está activo");
                 $this->pdo->rollBack();
-                return false;
+            } else {
+                // Reactivar las participaciones
+                $sqlParticipa = "UPDATE participa SET activo = TRUE WHERE id_viaje = ?";
+                $stmtPart = $this->pdo->prepare($sqlParticipa);
+                $stmtPart->execute([$this->id_viaje]);
+
+                // Reactivar pasajeros asociados al viaje
+                $participa = new Participa();
+                $pasajeros = $participa->listarTodosPasajerosPorViaje($this->id_viaje);
+                foreach ($pasajeros as $pasajero) {
+                    $sqlPasajero = "UPDATE pasajero SET activo = TRUE WHERE documento = ?";
+                    $stmtPas = $this->pdo->prepare($sqlPasajero);
+                    $stmtPas->execute([$pasajero->getDocumento()]);
+                }
+
+                $this->setActivo(true);
+                $this->pdo->commit();
+                $resultado = true;
             }
-
-            // Reactivar las participaciones
-            $sqlParticipa = "UPDATE participa SET activo = TRUE WHERE id_viaje = ?";
-            $stmtPart = $this->pdo->prepare($sqlParticipa);
-            $stmtPart->execute([$this->id_viaje]);
-
-            // Reactivar pasajeros asociados al viaje
-            $participa = new Participa();
-            $pasajeros = $participa->listarTodosPasajerosPorViaje($this->id_viaje); // sin filtro activo
-            foreach ($pasajeros as $pasajero) {
-                $sqlPasajero = "UPDATE pasajero SET activo = TRUE WHERE documento = ?";
-                $stmtPas = $this->pdo->prepare($sqlPasajero);
-                $stmtPas->execute([$pasajero->getDocumento()]);
-            }
-
-            $this->setActivo(true);
-            $this->pdo->commit();
-            $resultado = true;
 
         } catch (PDOException $e) {
             $this->pdo->rollBack();
@@ -346,6 +345,7 @@ class Viaje {
 
         return $resultado;
     }
+
 
 
     
