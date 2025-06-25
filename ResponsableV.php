@@ -128,7 +128,6 @@ class ResponsableV extends Persona {
                 $arreglo[] = $obj;
             }
             
-            $resultado = true;
         } catch (PDOException $e) {
             $this->setMensajeError("Error al listar: " . $e->getMessage());
         }

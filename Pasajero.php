@@ -63,7 +63,7 @@ class Pasajero extends Persona {
             if ($okPersona) {
                 $sqlPasajero = "UPDATE pasajero SET p_telefono = ? WHERE documento = ?";
                 $stmtPasajero = $this->pdo->prepare($sqlPasajero);
-                $resultado = $stmtPasajero->execute([$this->telefono, $this->getDocumento()]);
+                $resultado = $stmtPasajero->execute([$this->getTelefono(), $this->getDocumento()]);
                 
                 if (!$resultado) {
                     $this->setMensajeError("No se pudo actualizar el teléfono");
@@ -172,7 +172,7 @@ class Pasajero extends Persona {
     public function __toString() {
         return "Pasajero [Documento: " . $this->getDocumento() . 
                ", Nombre: " . $this->getNombre() . " " . $this->getApellido() . 
-               ", Teléfono: " . $this->telefono . 
+               ", Teléfono: " . $this->getTelefono() . 
                ", Estado: " . ($this->getActivo() ? "ACTIVO" : "INACTIVO") . "]";
     }
 }
