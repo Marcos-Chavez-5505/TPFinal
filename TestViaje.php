@@ -296,10 +296,10 @@ $test = new TestViajes();
 
 
 // 1. Insertar persona
-// $test->insertarPersona("3", "Lucas", "Fernandez");
+// $test->insertarPersona("46777888", "Lucas", "Fernandez");
 
 // 2. Asignar responsable (dni, num_licencia)
-// $test->asignarResponsable("3", 22345);
+// $test->asignarResponsable("46777888", 22345);
 
 // 3. Insertar empresa 
 // $empresa = $test->insertarEmpresa("Aerolineas Argentinas", "Av. Argentina 123");
@@ -310,20 +310,20 @@ $test = new TestViajes();
 
 // 4. Insertar viaje con el responsable y empresa creados
 
-// $test->insertarViaje("Mar del Plata", 50, 2000, 2, "3");
+// $test->insertarViaje("Mar del Plata", 50, 2000, 1, "46777888");
 
 
 // Asignar pasajero (doc, tel, id_viaje)
-// $test->asignarPasajero("3", 29998889, 2);
+// $test->asignarPasajero("46777888", 29998889, 1);
 
 
 // echo $test->verPasajeros();
 
 // Borrado logico
-// $test->eliminarViaje(2);
+// $test->eliminarViaje(1);
 
 // Reactivar viajes
-// $test->reactivarViaje(2);
+// $test->reactivarViaje(1);
 
 // 5. Mostrar viajes
-// echo $test->verViajes();
+echo $test->verViajes();

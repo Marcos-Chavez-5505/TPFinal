@@ -34,8 +34,8 @@ class Pasajero extends Persona {
             $stmtVerificar->execute([$documento]);
             
             if ($stmtVerificar->rowCount() > 0) {
-                $sqlInsert = "INSERT INTO pasajero (documento, p_telefono, activo) VALUES (?, ?, TRUE)";
-                $stmtInsert = $this->pdo->prepare($sqlInsert);
+                $sql = "INSERT INTO pasajero (documento, p_telefono, activo) VALUES (?, ?, TRUE)";
+                $stmtInsert = $this->pdo->prepare($sql);
                 $resultado = $stmtInsert->execute([$documento, $telefono]);
                 
                 if (!$resultado) {

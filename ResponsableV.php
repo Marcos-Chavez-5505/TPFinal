@@ -19,13 +19,9 @@ class ResponsableV extends Persona {
     public function setNumLicencia($numLicencia) { $this->numLicencia = $numLicencia; }
     public function setMensajeError($msg) { $this->mensajeError = $msg; }
 
-    public function cargar($numLicencia, $nombre, $apellido, $documento = null) {
+    public function cargar($numLicencia, $nombre, $apellido, $documento = null, $activo = true) {
+        parent::cargar($documento, $nombre, $apellido, $activo);
         $this->setNumLicencia($numLicencia);
-        $this->setNombre($nombre);
-        $this->setApellido($apellido);
-        if ($documento !== null) { 
-            $this->setDocumento($documento); 
-        }
     }
 
     public function asignarComoResponsable($documento, $numLicencia) {
