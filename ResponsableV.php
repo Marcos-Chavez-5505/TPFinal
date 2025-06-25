@@ -140,6 +140,29 @@ class ResponsableV extends Persona {
         return $arreglo;
     }
 
+    public function reactivar() {
+        $resultado = false;
+        $this->setMensajeError("");
+        
+        $sql = "UPDATE responsable SET activo = TRUE WHERE documento = ? AND activo = FALSE";
+        
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $resultado = $stmt->execute([$this->getDocumento()]);
+            
+            if ($stmt->rowCount() == 0) {
+                $this->setMensajeError("No se puede reactivar: el responsable no existe o ya está activo");
+                $resultado = false;
+            }
+            
+        } catch (PDOException $e) {
+            $this->setMensajeError("Error al reactivar responsable: " . $e->getMessage());
+        }
+        
+        return $resultado;
+    }
+
+
     public function __toString() {
         return "Responsable [Licencia: " . $this->numLicencia . 
                ", Nombre: " . $this->getNombre() . 

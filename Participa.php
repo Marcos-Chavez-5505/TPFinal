@@ -153,6 +153,38 @@ class Participa {
         return $lista;
     }
 
+    public function listarTodosPasajerosPorViaje($idViaje) {
+        $lista = [];
+        $this->setMensajeError("");
+
+        try {
+            $sql = "SELECT p.documento, p.nombre, p.apellido, ps.p_telefono as telefono 
+                    FROM persona p
+                    JOIN pasajero ps ON p.documento = ps.documento
+                    JOIN participa pa ON p.documento = pa.documento
+                    WHERE pa.id_viaje = ?";
+            
+            $stmt = $this->pdo->prepare($sql);
+            if ($stmt->execute([$idViaje])) {
+                while ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $pasajero = new Pasajero();
+                    $pasajero->cargar(
+                        $fila['documento'],
+                        $fila['nombre'],
+                        $fila['apellido'],
+                        $fila['telefono']
+                    );
+                    $lista[] = $pasajero;
+                }
+            }
+        } catch (PDOException $e) {
+            $this->setMensajeError("Error al listar todos los pasajeros: " . $e->getMessage());
+        }
+
+        return $lista;
+    }
+
+
     public function listar($condicion = "") {
         $participaciones = [];
         $this->setMensajeError("");
@@ -179,5 +211,30 @@ class Participa {
         
         return $participaciones;
     }
+
+    public function reactivar() {
+        $resultado = false;
+        $this->setMensajeError("");
+
+        $sql = "UPDATE participa SET activo = TRUE WHERE id_viaje = ? AND documento = ? AND activo = FALSE";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $resultado = $stmt->execute([$this->getIdViaje(), $this->getDocumento()]);
+
+            if ($stmt->rowCount() == 0) {
+                $this->setMensajeError("No se puede reactivar: la participación no existe o ya está activa");
+                $resultado = false;
+            } else {
+                $this->setActivo(true);
+            }
+
+        } catch (PDOException $e) {
+            $this->setMensajeError("Error al reactivar participación: " . $e->getMessage());
+        }
+
+        return $resultado;
+    }
+
 }
 ?>

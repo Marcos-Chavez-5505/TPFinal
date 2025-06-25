@@ -197,12 +197,14 @@ class Viaje {
         // 1. Obtener todos los pasajeros del viaje
         $participa = new Participa();
         $pasajeros = $participa->listarPasajerosPorViaje($this->id_viaje);
+        // array map ejecuta una funcion a un array, en este caso obtiene los documentos de los pasajeros
         $documentosPasajeros = array_map(fn($p) => $p->getDocumento(), $pasajeros);
 
         // 2. Desactivar todas las participaciones del viaje
         $this->pdo->exec("UPDATE participa SET activo = FALSE WHERE id_viaje = " . $this->id_viaje);
 
         // 3. Desactivar solo los pasajeros que no estén en otros viajes activos
+        // array_unique evita que se repitan los documentos en los pasajeros si estan en otros viajes
         foreach (array_unique($documentosPasajeros) as $doc) {
             // Verificar si el pasajero está en otros viajes activos
             $sql = "SELECT COUNT(*) FROM participa p 
@@ -300,20 +302,67 @@ class Viaje {
         return $viajes;
     }
 
+
+    public function reactivar() {
+        $resultado = false;
+        $this->setMensajeError("");
+
+        try {
+            $this->pdo->beginTransaction();
+
+            // Reactivar el viaje
+            $sql = "UPDATE viaje SET activo = TRUE WHERE id_viaje = ? AND activo = FALSE";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$this->id_viaje]);
+
+            if ($stmt->rowCount() == 0) {
+                $this->setMensajeError("No se puede reactivar: el viaje no existe o ya está activo");
+                $this->pdo->rollBack();
+                return false;
+            }
+
+            // Reactivar las participaciones
+            $sqlParticipa = "UPDATE participa SET activo = TRUE WHERE id_viaje = ?";
+            $stmtPart = $this->pdo->prepare($sqlParticipa);
+            $stmtPart->execute([$this->id_viaje]);
+
+            // Reactivar pasajeros asociados al viaje
+            $participa = new Participa();
+            $pasajeros = $participa->listarTodosPasajerosPorViaje($this->id_viaje); // sin filtro activo
+            foreach ($pasajeros as $pasajero) {
+                $sqlPasajero = "UPDATE pasajero SET activo = TRUE WHERE documento = ?";
+                $stmtPas = $this->pdo->prepare($sqlPasajero);
+                $stmtPas->execute([$pasajero->getDocumento()]);
+            }
+
+            $this->setActivo(true);
+            $this->pdo->commit();
+            $resultado = true;
+
+        } catch (PDOException $e) {
+            $this->pdo->rollBack();
+            $this->setMensajeError("Error al reactivar Viaje: " . $e->getMessage());
+        }
+
+        return $resultado;
+    }
+
+
+    
+
+
     public function __toString() {
         $empresaNombre = $this->objEmpresa ? $this->objEmpresa->getNombre() : "Sin empresa";
         $responsableNombre = $this->objResponsableV ? $this->objResponsableV->getNombre() . " " . $this->objResponsableV->getApellido() : "Sin responsable";
-        
-        return sprintf(
-            "Viaje ID: %d | Destino: %s | Capacidad: %d | Importe: %.2f | Empresa: %s | Responsable: %s",
-            $this->id_viaje,
-            $this->v_destino,
-            $this->v_cantmaxpasajeros,
-            $this->v_importe,
-            $empresaNombre,
-            $responsableNombre
-        );
+
+        return "Viaje ID: " . $this->id_viaje .
+            " | Destino: " . $this->v_destino .
+            " | Capacidad: " . $this->v_cantmaxpasajeros .
+            " | Importe: " . number_format($this->v_importe, 2) .
+            " | Empresa: " . $empresaNombre .
+            " | Responsable: " . $responsableNombre;
     }
+
 
     public function ColPasajerosStr() {
         $str = "";
