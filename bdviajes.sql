@@ -70,9 +70,3 @@ CREATE TABLE participa (
         ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Índices para búsquedas por activo
-CREATE INDEX idx_empresa_activo ON empresa(activo);
-CREATE INDEX idx_responsable_activo ON responsable(activo);
-CREATE INDEX idx_pasajero_activo ON pasajero(activo);
-CREATE INDEX idx_viaje_activo ON viaje(activo);
-CREATE INDEX idx_participa_activo ON participa(activo);

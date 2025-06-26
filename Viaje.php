@@ -198,48 +198,23 @@ class Viaje {
         return $resultado;
     }
 
-  public function eliminar() {
-    $resultado = false;
-    $this->setMensajeError("");
+    public function eliminar() {
+        $resultado = false;
+        $this->setMensajeError("");
 
-    try {
-        // 1. Obtener todos los pasajeros del viaje
-        $participa = new Participa();
-        $pasajeros = $participa->listarPasajerosPorViaje($this->getIdViaje());
-        // array map ejecuta una funcion a un array, en este caso obtiene los documentos de los pasajeros
-        $documentosPasajeros = array_map(fn($p) => $p->getDocumento(), $pasajeros);
-
-        // 2. Desactivar todas las participaciones del viaje
-        $this->pdo->exec("UPDATE participa SET activo = FALSE WHERE id_viaje = " . $this->getIdViaje());
-
-        // 3. Desactivar solo los pasajeros que no estén en otros viajes activos
-        // array_unique evita que se repitan los documentos en los pasajeros si estan en otros viajes
-        foreach (array_unique($documentosPasajeros) as $doc) {
-            // Verificar si el pasajero está en otros viajes activos
-            $sql = "SELECT COUNT(*) FROM participa p 
-                         JOIN viaje v ON p.id_viaje = v.id_viaje 
-                         WHERE p.documento = ? AND v.activo = TRUE AND p.id_viaje != ?";
+        try {
+            // 2. Desactivar el viaje
+            $sql = "UPDATE viaje SET activo = FALSE WHERE id_viaje = ?";
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$doc, $this->getIdViaje()]);
-            $count = $stmt->fetchColumn();
-            
-            // Solo desactivar si no está en otros viajes activos
-            if ($count == 0) {
-                $this->pdo->exec("UPDATE pasajero SET activo = FALSE WHERE documento = '$doc'");
-            }
+            $resultado = $stmt->execute([$this->getIdViaje()]);
+
+        } catch (PDOException $e) {
+            $this->setMensajeError("Error al eliminar: " . $e->getMessage());
         }
 
-        // 4. Desactivar el viaje
-        $sql = "UPDATE viaje SET activo = FALSE WHERE id_viaje = ?";
-        $stmt = $this->pdo->prepare($sql);
-        $resultado = $stmt->execute([$this->getIdViaje()]);
-
-    } catch (PDOException $e) {
-        $this->setMensajeError("Error al eliminar: " . $e->getMessage());
+        return $resultado;
     }
 
-    return $resultado;
-    }
 
     public function buscar($id) {
         $resultado = false;
