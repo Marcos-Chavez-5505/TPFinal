@@ -233,20 +233,23 @@ class TestViajes {
             $mensajeError = "Error: El viaje con ID $idViaje no existe.\n";
         } elseif ($participa->buscar($idViaje, $documento, true)) {
             $mensajeError = "Error: El pasajero con documento $documento ya está registrado en este viaje.\n";
-        } elseif ($pasajero->buscar($documento) || $pasajero->asignarComoPasajero($documento, $telefono)) {
-            $participa->setIdViaje($idViaje);
-            $participa->setDocumento($documento);
+        } if (count($viaje->getColPasajeros()) < $viaje->getCantMaxPasajeros()){
+            if ($pasajero->buscar($documento) || $pasajero->asignarComoPasajero($documento, $telefono)) {
+                $participa->setIdViaje($idViaje);
+                $participa->setDocumento($documento);
 
-            if ($participa->insertar()) {
-                $resultado = true;
-                $mensajeError = "Pasajero asignado con éxito al viaje.\n";
+                if ($participa->insertar()) {
+                    $resultado = true;
+                    $mensajeError = "Pasajero asignado con éxito al viaje.\n";
+                } else {
+                    $mensajeError = "Error al vincular al viaje: " . $participa->getMensajeError() . "\n";
+                }
             } else {
-                $mensajeError = "Error al vincular al viaje: " . $participa->getMensajeError() . "\n";
+                $mensajeError = "Error al registrar pasajero: " . $pasajero->getMensajeError() . "\n";
             }
         } else {
-            $mensajeError = "Error al registrar pasajero: " . $pasajero->getMensajeError() . "\n";
+            $mensajeError = "Error: El viaje se encuentra completo.\n";
         }
-
         echo $mensajeError;
         return $resultado;
     }

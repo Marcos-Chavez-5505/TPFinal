@@ -241,7 +241,7 @@ class Viaje {
                         );
                         
                         $this->setIdViaje($fila['id_viaje']);
-                        $this->colPasajeros = $this->cargarPasajeros($id);
+                        $this->setColPasajeros($this->cargarPasajeros($id));
                         $resultado = true;
                     } else {
                         $this->setMensajeError("No se pudo cargar empresa o responsable");
